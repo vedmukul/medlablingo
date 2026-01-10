@@ -15,9 +15,7 @@ export default function ResultsPage() {
         try {
             const payload = loadAnalysis();
             if (!payload) {
-                setError(
-                    "No analysis found (or it expired). Please upload a document again."
-                );
+                setError("No analysis found (or it expired). Please upload a document again.");
                 return;
             }
             if (!payload.ok) {
@@ -49,11 +47,8 @@ export default function ResultsPage() {
                 <DisclaimerBanner />
 
                 <section className="border rounded-lg p-4 bg-red-50">
-                    <h2 className="font-medium mb-2 text-red-800">
-                        Could not load results
-                    </h2>
+                    <h2 className="font-medium mb-2 text-red-800">Could not load results</h2>
                     <p className="text-sm text-red-700">{error}</p>
-
                     <div className="mt-4 flex gap-3">
                         <button
                             onClick={() => {
@@ -64,7 +59,6 @@ export default function ResultsPage() {
                         >
                             Clear & Retry
                         </button>
-
                         <Link href="/upload" className="px-3 py-2 rounded border text-sm">
                             Go to Upload
                         </Link>
@@ -78,13 +72,7 @@ export default function ResultsPage() {
         return <p className="p-6">Loading...</p>;
     }
 
-    const {
-        documentType,
-        readingLevel,
-        extractedTextLength,
-        extractionPreview,
-        result,
-    } = data;
+    const { documentType, readingLevel, extractedTextLength, extractionPreview, result } = data as any;
 
     return (
         <main className="max-w-3xl mx-auto p-6 space-y-6">
@@ -123,9 +111,7 @@ export default function ResultsPage() {
             {/* Extracted Text Preview */}
             <section className="border rounded-lg p-4">
                 <h2 className="font-medium mb-1">Extracted Text Preview</h2>
-                <p className="text-sm text-gray-500 mb-2">
-                    First ~300 characters of the document.
-                </p>
+                <p className="text-sm text-gray-500 mb-2">First ~300 characters of the document.</p>
                 <pre className="bg-gray-50 p-3 rounded text-sm whitespace-pre-wrap">
                     {extractionPreview || "No preview available."}
                 </pre>
@@ -140,11 +126,9 @@ export default function ResultsPage() {
 
                         {!!result.patientSummary?.keyTakeaways?.length && (
                             <ul className="list-disc ml-5 mt-2">
-                                {result.patientSummary.keyTakeaways.map(
-                                    (k: string, i: number) => (
-                                        <li key={i}>{k}</li>
-                                    )
-                                )}
+                                {result.patientSummary.keyTakeaways.map((k: string, i: number) => (
+                                    <li key={i}>{k}</li>
+                                ))}
                             </ul>
                         )}
                     </section>
