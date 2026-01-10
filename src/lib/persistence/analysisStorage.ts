@@ -1,5 +1,12 @@
 // src/lib/persistence/analysisStorage.ts
 import type { AnalysisResult } from "@/contracts/analysisSchema";
+import {
+    STORAGE_KEY,
+    STORAGE_VERSION,
+    DATA_RETENTION_TTL_MS,
+    isExpired,
+} from "@/lib/compliance/dataPolicy";
+import { auditComplianceEvent } from "@/lib/compliance/audit";
 
 export type DocumentType = "lab_report" | "discharge_instructions";
 export type ReadingLevel = "simple" | "standard";
@@ -13,6 +20,7 @@ export interface AnalysisApiResponse {
     result?: AnalysisResult;
     error?: string;
     hint?: string;
+    requestId?: string; // Correlation ID for observability
 }
 
 type StoredAnalysis = {
@@ -21,35 +29,33 @@ type StoredAnalysis = {
     payload: AnalysisApiResponse;
 };
 
-const KEY = "lablingo:analysis:v1";
-
-// Optional TTL (set to null to disable)
-const TTL_MS = 1000 * 60 * 60 * 24; // 24h
-
 export function saveAnalysis(payload: AnalysisApiResponse) {
     const data: StoredAnalysis = {
-        version: "v1",
+        version: STORAGE_VERSION,
         savedAt: new Date().toISOString(),
         payload,
     };
-    localStorage.setItem(KEY, JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
 export function loadAnalysis(): AnalysisApiResponse | null {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
 
     try {
         const parsed = JSON.parse(raw) as StoredAnalysis;
 
-        if (!parsed?.payload || parsed.version !== "v1") return null;
+        if (!parsed?.payload || parsed.version !== STORAGE_VERSION) return null;
 
-        if (TTL_MS) {
-            const saved = new Date(parsed.savedAt).getTime();
-            if (Number.isFinite(saved) && Date.now() - saved > TTL_MS) {
-                localStorage.removeItem(KEY);
-                return null;
-            }
+        // Check TTL expiration
+        if (isExpired(parsed.savedAt)) {
+            auditComplianceEvent(
+                "data_retention_expired",
+                "Stored analysis expired and was deleted",
+                { savedAt: parsed.savedAt }
+            );
+            localStorage.removeItem(STORAGE_KEY);
+            return null;
         }
 
         return parsed.payload;
@@ -58,6 +64,23 @@ export function loadAnalysis(): AnalysisApiResponse | null {
     }
 }
 
+/**
+ * Check if stored analysis has expired without loading it.
+ * Useful for UI to show expiration messages.
+ */
+export function isAnalysisExpired(): boolean {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+
+    try {
+        const parsed = JSON.parse(raw) as StoredAnalysis;
+        return isExpired(parsed.savedAt);
+    } catch {
+        return false;
+    }
+}
+
 export function clearAnalysis() {
-    localStorage.removeItem(KEY);
+    auditComplianceEvent("data_cleared", "User manually cleared stored analysis");
+    localStorage.removeItem(STORAGE_KEY);
 }
