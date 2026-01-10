@@ -1,31 +1,30 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Loading } from '@/components/Loading';
-import { DisclaimerBanner } from '@/components/DisclaimerBanner';
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Loading } from "@/components/Loading";
+import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 
 function UploadForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
     const [file, setFile] = useState<File | null>(null);
-    const [documentType, setDocumentType] = useState('lab_report');
-    const [readingLevel, setReadingLevel] = useState('standard');
+    const [documentType, setDocumentType] = useState("lab_report");
+    const [readingLevel, setReadingLevel] = useState("standard");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const typeParam = searchParams.get('documentType');
-        if (typeParam) {
-            setDocumentType(typeParam);
-        }
+        const typeParam = searchParams.get("documentType");
+        if (typeParam) setDocumentType(typeParam);
     }, [searchParams]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
         if (!file) {
-            setError('Please select a PDF file.');
+            setError("Please select a PDF file.");
             return;
         }
 
@@ -33,33 +32,31 @@ function UploadForm() {
         setError(null);
 
         const formData = new FormData();
-        formData.append('file', file);
-        formData.append('documentType', documentType);
-        formData.append('readingLevel', readingLevel);
+        formData.append("file", file);
+        formData.append("documentType", documentType);
+        formData.append("readingLevel", readingLevel);
 
         try {
-            const response = await fetch('/api/analyze', {
-                method: 'POST',
+            const response = await fetch("/api/analyze", {
+                method: "POST",
                 body: formData,
             });
 
-            if (!response.ok) {
-                throw new Error('Analysis failed. Please try again.');
-            }
-
             const data = await response.json();
 
-            // Navigate to results with query params
-            const params = new URLSearchParams();
-            params.append('documentType', documentType);
-            params.append('readingLevel', readingLevel);
-            if (data.extractedTextLength) params.append('extractedTextLength', data.extractedTextLength.toString());
-            if (data.preview) params.append('preview', data.preview);
+            // If API returns ok:false, show the server error message if available
+            if (!response.ok || data?.ok === false) {
+                throw new Error(data?.error || "Analysis failed. Please try again.");
+            }
 
-            router.push(`/results?${params.toString()}`);
+            // ✅ Save the FULL response so /results can render preview + AI result
+            localStorage.setItem("analysis", JSON.stringify(data));
+
+            // ✅ Navigate without query params (clean + avoids URL length limits)
+            router.push("/results");
         } catch (err: any) {
             console.error(err);
-            setError(err.message || 'An error occurred.');
+            setError(err?.message || "An error occurred.");
         } finally {
             setIsLoading(false);
         }
@@ -81,8 +78,16 @@ function UploadForm() {
                     <div className="bg-red-50 border-l-4 border-red-400 p-4">
                         <div className="flex">
                             <div className="flex-shrink-0">
-                                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                <svg
+                                    className="h-5 w-5 text-red-400"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                        clipRule="evenodd"
+                                    />
                                 </svg>
                             </div>
                             <div className="ml-3">
@@ -163,7 +168,9 @@ function UploadForm() {
                             </div>
                             <p className="text-xs text-gray-500">PDF up to 10MB</p>
                             {file && (
-                                <p className="text-sm text-green-600 font-semibold mt-2">Selected: {file.name}</p>
+                                <p className="text-sm text-green-600 font-semibold mt-2">
+                                    Selected: {file.name}
+                                </p>
                             )}
                         </div>
                     </div>
@@ -175,7 +182,7 @@ function UploadForm() {
                         disabled={!file || isLoading}
                         className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isLoading ? 'Processing...' : 'Analyze Document'}
+                        {isLoading ? "Processing..." : "Analyze Document"}
                     </button>
                 </div>
             </form>
@@ -188,7 +195,9 @@ export default function UploadPage() {
         <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-xl mx-auto">
                 <div className="text-center mb-10">
-                    <h2 className="text-3xl font-extrabold text-gray-900">Upload your document</h2>
+                    <h2 className="text-3xl font-extrabold text-gray-900">
+                        Upload your document
+                    </h2>
                     <p className="mt-2 text-sm text-gray-600">
                         We&apos;ll analyze it and provide a clear summary.
                     </p>
