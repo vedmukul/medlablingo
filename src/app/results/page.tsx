@@ -1,26 +1,40 @@
-'use client';
+"use client";
 
-import React, { Suspense } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { SummaryCard } from '@/components/SummaryCard';
-import { DisclaimerBanner } from '@/components/DisclaimerBanner';
-import { Loading } from '@/components/Loading';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { SummaryCard } from "@/components/SummaryCard";
+import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 
-function ResultsContent() {
-    const searchParams = useSearchParams();
+export default function ResultsPage() {
+    const [data, setData] = useState<any>(null);
 
-    const documentType = searchParams.get('documentType') || 'unknown';
-    const readingLevel = searchParams.get('readingLevel') || 'unknown';
-    const extractedTextLength = parseInt(searchParams.get('extractedTextLength') || '0', 10);
-    const preview = searchParams.get('preview') || 'No preview available.';
+    useEffect(() => {
+        const raw = localStorage.getItem("analysis");
+        if (raw) setData(JSON.parse(raw));
+    }, []);
+
+    if (!data) {
+        return <p className="p-6">No analysis found.</p>;
+    }
+
+    const {
+        documentType,
+        readingLevel,
+        extractedTextLength,
+        extractionPreview,
+        result,
+    } = data;
+
+    const overallSummary = result?.patientSummary?.overallSummary;
+    const keyTakeaways: string[] = result?.patientSummary?.keyTakeaways || [];
+    const questionsForDoctor: string[] = result?.questionsForDoctor || [];
 
     return (
-        <div className="max-w-3xl mx-auto">
-            <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-extrabold text-gray-900">Analysis Results</h2>
-                <Link href="/upload" className="text-indigo-600 hover:text-indigo-500 font-medium">
-                    &larr; Analyze another
+        <main className="max-w-3xl mx-auto p-6 space-y-6">
+            <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-semibold">Analysis Results</h1>
+                <Link href="/upload" className="text-sm text-blue-600">
+                    ← Analyze another
                 </Link>
             </div>
 
@@ -32,40 +46,49 @@ function ResultsContent() {
                 extractedTextLength={extractedTextLength}
             />
 
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
-                <div className="px-4 py-5 sm:px-6">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                        Extracted Text Preview
-                    </h3>
-                    <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                        First ~300 characters of the document.
-                    </p>
-                </div>
-                <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
-                    <pre className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-md border border-gray-200 font-mono">
-                        {preview}
-                    </pre>
-                </div>
-            </div>
+            <section className="border rounded-lg p-4">
+                <h2 className="font-medium mb-1">Extracted Text Preview</h2>
+                <p className="text-sm text-gray-500 mb-2">
+                    First ~300 characters of the document.
+                </p>
+                <pre className="bg-gray-50 p-3 rounded text-sm whitespace-pre-wrap">
+                    {extractionPreview || "No preview available."}
+                </pre>
+            </section>
 
-            <div className="flex justify-center mt-8">
-                <Link
-                    href="/"
-                    className="text-base text-gray-500 hover:text-gray-900"
-                >
+            {result && (
+                <>
+                    <section className="border rounded-lg p-4">
+                        <h2 className="font-medium mb-2">What this document says</h2>
+                        <p>{overallSummary || "Summary unavailable."}</p>
+
+                        {keyTakeaways.length > 0 && (
+                            <ul className="list-disc ml-5 mt-2">
+                                {keyTakeaways.map((k, i) => (
+                                    <li key={i}>{k}</li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
+
+                    {questionsForDoctor.length > 0 && (
+                        <section className="border rounded-lg p-4">
+                            <h2 className="font-medium mb-2">Questions to ask your doctor</h2>
+                            <ul className="list-decimal ml-5">
+                                {questionsForDoctor.map((q, i) => (
+                                    <li key={i}>{q}</li>
+                                ))}
+                            </ul>
+                        </section>
+                    )}
+                </>
+            )}
+
+            <div className="text-center">
+                <Link href="/" className="text-sm text-gray-600">
                     Back to Home
                 </Link>
             </div>
-        </div>
-    );
-}
-
-export default function ResultsPage() {
-    return (
-        <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <Suspense fallback={<Loading />}>
-                <ResultsContent />
-            </Suspense>
         </main>
     );
 }
