@@ -1,20 +1,69 @@
+// src/app/results/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { SummaryCard } from "@/components/SummaryCard";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
+import { SummaryCard } from "@/components/SummaryCard";
+import { clearAnalysis, loadAnalysis } from "@/lib/persistence/analysisStorage";
 
 export default function ResultsPage() {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<ReturnType<typeof loadAnalysis>>(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const raw = localStorage.getItem("analysis");
-        if (raw) setData(JSON.parse(raw));
+        try {
+            const payload = loadAnalysis();
+            if (!payload) {
+                setError("No analysis found (or it expired). Please upload a document again.");
+                return;
+            }
+            if (!payload.ok) {
+                setError(payload.error || "Analysis failed. Please upload again.");
+                return;
+            }
+            setData(payload);
+        } catch {
+            setError("Saved analysis was corrupted. Please upload again.");
+        }
     }, []);
 
+    if (error) {
+        return (
+            <main className="max-w-3xl mx-auto p-6 space-y-6">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-2xl font-semibold">Analysis Results</h1>
+                    <Link href="/upload" className="text-sm text-blue-600">
+                        ← Upload again
+                    </Link>
+                </div>
+
+                <DisclaimerBanner />
+
+                <section className="border rounded-lg p-4 bg-red-50">
+                    <h2 className="font-medium mb-2 text-red-800">Could not load results</h2>
+                    <p className="text-sm text-red-700">{error}</p>
+                    <div className="mt-4 flex gap-3">
+                        <button
+                            onClick={() => {
+                                clearAnalysis();
+                                location.href = "/upload";
+                            }}
+                            className="px-3 py-2 rounded bg-red-600 text-white text-sm"
+                        >
+                            Clear & Retry
+                        </button>
+                        <Link href="/upload" className="px-3 py-2 rounded border text-sm">
+                            Go to Upload
+                        </Link>
+                    </div>
+                </section>
+            </main>
+        );
+    }
+
     if (!data) {
-        return <p className="p-6">No analysis found.</p>;
+        return <p className="p-6">Loading...</p>;
     }
 
     const {
@@ -25,17 +74,24 @@ export default function ResultsPage() {
         result,
     } = data;
 
-    const overallSummary = result?.patientSummary?.overallSummary;
-    const keyTakeaways: string[] = result?.patientSummary?.keyTakeaways || [];
-    const questionsForDoctor: string[] = result?.questionsForDoctor || [];
-
     return (
         <main className="max-w-3xl mx-auto p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-semibold">Analysis Results</h1>
-                <Link href="/upload" className="text-sm text-blue-600">
-                    ← Analyze another
-                </Link>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => {
+                            clearAnalysis();
+                            location.reload();
+                        }}
+                        className="text-sm text-gray-500 hover:text-gray-800"
+                    >
+                        Clear saved
+                    </button>
+                    <Link href="/upload" className="text-sm text-blue-600">
+                        ← Analyze another
+                    </Link>
+                </div>
             </div>
 
             <DisclaimerBanner />
@@ -46,6 +102,7 @@ export default function ResultsPage() {
                 extractedTextLength={extractedTextLength}
             />
 
+            {/* Extracted Text Preview */}
             <section className="border rounded-lg p-4">
                 <h2 className="font-medium mb-1">Extracted Text Preview</h2>
                 <p className="text-sm text-gray-500 mb-2">
@@ -56,26 +113,27 @@ export default function ResultsPage() {
                 </pre>
             </section>
 
+            {/* AI Summary */}
             {result && (
                 <>
                     <section className="border rounded-lg p-4">
                         <h2 className="font-medium mb-2">What this document says</h2>
-                        <p>{overallSummary || "Summary unavailable."}</p>
+                        <p>{result.patientSummary?.overallSummary}</p>
 
-                        {keyTakeaways.length > 0 && (
+                        {!!result.patientSummary?.keyTakeaways?.length && (
                             <ul className="list-disc ml-5 mt-2">
-                                {keyTakeaways.map((k, i) => (
+                                {result.patientSummary.keyTakeaways.map((k: string, i: number) => (
                                     <li key={i}>{k}</li>
                                 ))}
                             </ul>
                         )}
                     </section>
 
-                    {questionsForDoctor.length > 0 && (
+                    {!!result.questionsForDoctor?.length && (
                         <section className="border rounded-lg p-4">
                             <h2 className="font-medium mb-2">Questions to ask your doctor</h2>
                             <ul className="list-decimal ml-5">
-                                {questionsForDoctor.map((q, i) => (
+                                {result.questionsForDoctor.map((q: string, i: number) => (
                                     <li key={i}>{q}</li>
                                 ))}
                             </ul>

@@ -1,9 +1,11 @@
+// src/app/upload/page.tsx
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loading } from "@/components/Loading";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
+import { saveAnalysis } from "@/lib/persistence/analysisStorage";
 
 function UploadForm() {
     const router = useRouter();
@@ -42,17 +44,19 @@ function UploadForm() {
                 body: formData,
             });
 
-            const data = await response.json();
+            const data = await response.json().catch(() => null);
 
-            // If API returns ok:false, show the server error message if available
-            if (!response.ok || data?.ok === false) {
-                throw new Error(data?.error || "Analysis failed. Please try again.");
+            if (!response.ok || !data?.ok) {
+                const msg =
+                    data?.error ||
+                    "Analysis failed. Please try again with a clearer (text-selectable) PDF.";
+                throw new Error(msg);
             }
 
-            // ✅ Save the FULL response so /results can render preview + AI result
-            localStorage.setItem("analysis", JSON.stringify(data));
+            // Persist entire payload for /results
+            saveAnalysis(data);
 
-            // ✅ Navigate without query params (clean + avoids URL length limits)
+            // Navigate (no query params needed)
             router.push("/results");
         } catch (err: any) {
             console.error(err);
@@ -98,7 +102,10 @@ function UploadForm() {
                 )}
 
                 <div>
-                    <label htmlFor="documentType" className="block text-sm font-medium text-gray-700">
+                    <label
+                        htmlFor="documentType"
+                        className="block text-sm font-medium text-gray-700"
+                    >
                         Document Type
                     </label>
                     <select
@@ -109,12 +116,17 @@ function UploadForm() {
                         onChange={(e) => setDocumentType(e.target.value)}
                     >
                         <option value="lab_report">Lab Report</option>
-                        <option value="discharge_instructions">Discharge Instructions</option>
+                        <option value="discharge_instructions">
+                            Discharge Instructions
+                        </option>
                     </select>
                 </div>
 
                 <div>
-                    <label htmlFor="readingLevel" className="block text-sm font-medium text-gray-700">
+                    <label
+                        htmlFor="readingLevel"
+                        className="block text-sm font-medium text-gray-700"
+                    >
                         Reading Level
                     </label>
                     <select
