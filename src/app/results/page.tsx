@@ -15,7 +15,9 @@ export default function ResultsPage() {
         try {
             const payload = loadAnalysis();
             if (!payload) {
-                setError("No analysis found (or it expired). Please upload a document again.");
+                setError(
+                    "No analysis found (or it expired). Please upload a document again."
+                );
                 return;
             }
             if (!payload.ok) {
@@ -33,16 +35,25 @@ export default function ResultsPage() {
             <main className="max-w-3xl mx-auto p-6 space-y-6">
                 <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-semibold">Analysis Results</h1>
-                    <Link href="/upload" className="text-sm text-blue-600">
-                        ← Upload again
-                    </Link>
+
+                    <div className="flex gap-4 text-sm">
+                        <Link href="/clinician/review" className="text-blue-600">
+                            Clinician review →
+                        </Link>
+                        <Link href="/upload" className="text-blue-600">
+                            ← Upload again
+                        </Link>
+                    </div>
                 </div>
 
                 <DisclaimerBanner />
 
                 <section className="border rounded-lg p-4 bg-red-50">
-                    <h2 className="font-medium mb-2 text-red-800">Could not load results</h2>
+                    <h2 className="font-medium mb-2 text-red-800">
+                        Could not load results
+                    </h2>
                     <p className="text-sm text-red-700">{error}</p>
+
                     <div className="mt-4 flex gap-3">
                         <button
                             onClick={() => {
@@ -53,6 +64,7 @@ export default function ResultsPage() {
                         >
                             Clear & Retry
                         </button>
+
                         <Link href="/upload" className="px-3 py-2 rounded border text-sm">
                             Go to Upload
                         </Link>
@@ -78,7 +90,12 @@ export default function ResultsPage() {
         <main className="max-w-3xl mx-auto p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-semibold">Analysis Results</h1>
+
                 <div className="flex items-center gap-4">
+                    <Link href="/clinician/review" className="text-sm text-blue-600">
+                        Clinician review →
+                    </Link>
+
                     <button
                         onClick={() => {
                             clearAnalysis();
@@ -88,6 +105,7 @@ export default function ResultsPage() {
                     >
                         Clear saved
                     </button>
+
                     <Link href="/upload" className="text-sm text-blue-600">
                         ← Analyze another
                     </Link>
@@ -122,9 +140,11 @@ export default function ResultsPage() {
 
                         {!!result.patientSummary?.keyTakeaways?.length && (
                             <ul className="list-disc ml-5 mt-2">
-                                {result.patientSummary.keyTakeaways.map((k: string, i: number) => (
-                                    <li key={i}>{k}</li>
-                                ))}
+                                {result.patientSummary.keyTakeaways.map(
+                                    (k: string, i: number) => (
+                                        <li key={i}>{k}</li>
+                                    )
+                                )}
                             </ul>
                         )}
                     </section>
