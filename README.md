@@ -2,9 +2,130 @@
 
 Educational tool for understanding healthcare documents. **Not medical advice. Not HIPAA compliant.**
 
-## Local setup
-1. `npm install`
-2. `npm run dev`
+## Local Setup
+
+### Prerequisites
+- Node.js 20+ and npm
+- A PDF file for testing (lab report or discharge instructions)
+
+### Installation
+
+1. **Clone and install dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Configure environment variables** (optional)
+   ```bash
+   cp .env.example .env.local
+   ```
+   
+   Edit `.env.local` and add your OpenAI API key if you want real AI analysis:
+   ```bash
+   OPENAI_API_KEY=sk-your-key-here
+   ```
+   
+   **Note**: If you skip this step, the app runs in **mock mode** with realistic sample data.
+
+3. **Start development server**
+   ```bash
+   npm run dev
+   ```
+   
+   Open [http://localhost:3000](http://localhost:3000)
+
+### Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `OPENAI_API_KEY` | No | _(mock mode)_ | OpenAI API key for AI analysis. If not set, returns realistic mock data. |
+
+**Mock Mode**: When `OPENAI_API_KEY` is not configured, the app functions fully with sample analysis results. Perfect for development and testing without API costs.
+
+### Running Tests
+
+LabLingo includes comprehensive test suites for safety, observability, compliance, and AI integration:
+
+```bash
+# Run all tests
+npm test
+
+# Individual test suites
+npm run test:safety         # Redaction and safety filtering
+npm run test:observability  # Logging and rate limiting
+npm run test:compliance     # Audit trail and data retention
+npm run test:ai-smoke       # AI integration (requires OPENAI_API_KEY)
+```
+
+**Note**: AI smoke tests require a valid `OPENAI_API_KEY` in `.env.local`. All other tests work without it.
+
+### Building for Production
+
+```bash
+# Create production build
+npm run build
+
+# Start production server
+npm start
+```
+
+## Deploying to Vercel
+
+LabLingo is optimized for deployment on Vercel with zero configuration.
+
+### Quick Deploy
+
+1. **Push to GitHub**
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git remote add origin https://github.com/yourusername/lablingo.git
+   git push -u origin main
+   ```
+
+2. **Import to Vercel**
+   - Visit [vercel.com/new](https://vercel.com/new)
+   - Import your GitHub repository
+   - Vercel auto-detects Next.js configuration
+
+3. **Configure environment variables** (optional)
+   - In Vercel dashboard → Settings → Environment Variables
+   - Add `OPENAI_API_KEY` if you want real AI analysis
+   - Leave empty for mock mode (works great for demos!)
+
+4. **Deploy**
+   - Click "Deploy"
+   - Vercel builds and deploys automatically
+   - Your app is live at `your-project.vercel.app`
+
+### Post-Deployment Verification
+
+After deployment, verify your app is working:
+
+```bash
+# Test health endpoint
+curl https://your-project.vercel.app/api/health
+
+# Expected response:
+# {"ok":true,"version":"0.1.0","time":"2026-01-11T...","requestId":"..."}
+```
+
+Test the full flow:
+1. Visit your deployed URL
+2. Upload a sample PDF
+3. Select document type and reading level
+4. Verify analysis results display correctly
+
+### Deployment Checklist
+
+For a comprehensive deployment guide, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+## Environment & Runtime
+
+- **Next.js**: 15.1.3 (App Router)
+- **Runtime**: Node.js (required for `crypto`, `Buffer`, and `pdf-parse`)
+- **Hosting**: Optimized for Vercel (works on any Node.js host)
 
 ## Data Handling & Safety
 

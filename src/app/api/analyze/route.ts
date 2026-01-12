@@ -12,6 +12,9 @@ import { logger } from "@/lib/observability/logger";
 import { checkRateLimit } from "@/lib/observability/rateLimiter";
 import { randomUUID, createHash } from "crypto";
 
+// Ensure we run on Node.js runtime for crypto, Buffer, and pdf-parse
+export const runtime = "nodejs";
+
 // Input validation schema
 const RequestSchema = z.object({
     documentType: DocumentTypeSchema,
