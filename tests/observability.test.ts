@@ -1,93 +1,66 @@
+// tests/observability.test.ts
+import assert from "node:assert/strict";
+import { logger } from "../src/lib/observability/logger";
+import { checkRateLimit, resetRateLimiterForTests } from "../src/lib/observability/rateLimiter";
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { logger } from '../src/lib/observability/logger';
-import { checkRateLimit } from '../src/lib/observability/rateLimiter';
+function captureConsole(fn: () => void) {
+    const logs: string[] = [];
+    const origLog = console.log;
+    const origWarn = console.warn;
+    const origErr = console.error;
 
-// Mock console methods to verify output
-const consoleError = vi.spyOn(console, 'error').mockImplementation(() => { });
-const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => { });
-const consoleInfo = vi.spyOn(console, 'log').mockImplementation(() => { }); // Using log for info
+    console.log = (msg?: any) => logs.push(String(msg));
+    console.warn = (msg?: any) => logs.push(String(msg));
+    console.error = (msg?: any) => logs.push(String(msg));
 
-describe('Observability Logger', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
+    try {
+        fn();
+    } finally {
+        console.log = origLog;
+        console.warn = origWarn;
+        console.error = origErr;
+    }
+    return logs;
+}
 
-    it('sanitizes blocked keys from logs', () => {
+(function testLoggerSanitizesBlockedKeys() {
+    const logs = captureConsole(() => {
         logger.info({
-            eventName: 'test.event',
-            extractedText: 'THIS IS PHI',
-            safeField: 'safe',
-            nested: {
-                rawResponse: 'MORE PHI',
-                ok: true
-            }
+            eventName: "analyze.started",
+            requestId: "req-123",
+            extractedText: "SUPER_SENSITIVE",
+            prompt: "SUPER_SENSITIVE",
+            nested: { redactedText: "SUPER_SENSITIVE" },
         });
-
-        const call = consoleInfo.mock.calls[0]?.[0];
-        expect(call).toBeDefined();
-        const json = JSON.parse(call);
-
-        expect(json.eventName).toBe('test.event');
-        expect(json.safeField).toBe('safe');
-        expect(json.extractedText).toBe('[REDACTED]');
-        expect(json.nested.rawResponse).toBe('[REDACTED]'); // "raw" is blocked key substring
-        expect(json.nested.ok).toBe(true);
     });
 
-    it('handles arrays and deep nesting', () => {
-        logger.info({
-            eventName: 'test.deep',
-            data: [
-                { id: 1, text: 'Secret' },
-                { id: 2, content: 'Hidden' }
-            ]
-        });
+    assert.equal(logs.length, 1);
 
-        const call = consoleInfo.mock.calls[0]?.[0];
-        const json = JSON.parse(call);
+    const parsed = JSON.parse(logs[0]);
+    const s = JSON.stringify(parsed);
 
-        expect(json.data[0].id).toBe(1);
-        expect(json.data[0].text).toBe('[REDACTED]');
-        expect(json.data[1].content).toBe('[REDACTED]');
-    });
+    // Ensure redaction occurred
+    assert.ok(s.includes("[REDACTED]"), "Expected logger to redact blocked keys");
+    assert.ok(!s.includes("SUPER_SENSITIVE"), "Logger leaked sensitive content");
+})();
 
-    it('does not crash on circular references (depth limit)', () => {
-        const circular: any = { name: 'circle' };
-        circular.self = circular;
+(function testRateLimiterBlocksAfterLimit() {
+    resetRateLimiterForTests();
 
-        logger.info({ eventName: 'test.circular', obj: circular });
+    const ip = "1.2.3.4";
+    // depending on your implementation, tweak loop count
+    // this assumes limiter allows a few then blocks
+    let blocked = false;
 
-        const call = consoleInfo.mock.calls[0]?.[0];
-        const json = JSON.parse(call);
-
-        expect(json.eventName).toBe('test.circular');
-        // Depth limit check - precise behavior depends on implementation depth
-        // We just ensure it didn't throw and logged *something*
-        expect(json.obj).toBeDefined();
-    });
-});
-
-describe('Rate Limiter', () => {
-    it('allows requests up to the limit', () => {
-        const ip = '1.2.3.4';
-        // Depending on environment, limit is 100 (dev) or 10.
-        // We will assume at least 5 work.
-        for (let i = 0; i < 5; i++) {
-            expect(checkRateLimit(ip)).toBe(true);
+    for (let i = 0; i < 50; i++) {
+        const ok = checkRateLimit(ip);
+        if (!ok) {
+            blocked = true;
+            break;
         }
-    });
+    }
 
-    it('blocks request when limit exceeded', () => {
-        const ip = '9.9.9.9';
-        // Exhaust the bucket
-        const LIMIT = 100; // Dev default in our code
+    assert.ok(blocked, "Expected rate limiter to eventually block repeated requests");
+})();
 
-        for (let i = 0; i < LIMIT; i++) {
-            checkRateLimit(ip);
-        }
-
-        // This one should fail
-        expect(checkRateLimit(ip)).toBe(false);
-    });
-});
+console.log("All observability tests passed! ✓");

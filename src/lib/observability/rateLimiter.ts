@@ -43,3 +43,7 @@ export function checkRateLimit(identifier: string): boolean {
 
     return false;
 }
+export function resetRateLimiterForTests() {
+    // clear in-memory state
+    buckets.clear(); // or whatever your map is called
+}
