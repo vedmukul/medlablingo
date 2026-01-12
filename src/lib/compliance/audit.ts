@@ -16,58 +16,67 @@ export type ComplianceEventType =
     | "redaction_applied";
 
 /**
+ * In-memory audit state (NO PHI).
+ * This is metadata-only and exists primarily for developer observability + tests.
+ */
+type AuditEvent = {
+    level: "info" | "warn";
+    eventType: ComplianceEventType;
+    message: string;
+    metadata?: Record<string, unknown>;
+    at: string;
+};
+
+let totalEvents = 0;
+const events: AuditEvent[] = [];
+
+function record(level: "info" | "warn", eventType: ComplianceEventType, message: string, metadata?: Record<string, unknown>) {
+    totalEvents += 1;
+    events.push({
+        level,
+        eventType,
+        message,
+        metadata,
+        at: new Date().toISOString(),
+    });
+
+    // Keep memory bounded
+    if (events.length > 200) events.splice(0, events.length - 200);
+}
+
+/**
  * Log a compliance-related warning in development mode.
  * NEVER include actual PHI/PII content in the message.
- *
- * @param eventType - Type of compliance event
- * @param message - Description of the event (no PHI/PII)
- * @param metadata - Additional context (no PHI/PII)
- *
- * @example
- * auditWarn("phi_risk_detected", "Attempt to store raw extracted text", {
- *   location: "api/analyze",
- *   action: "blocked"
- * });
  */
 export function auditWarn(
     eventType: ComplianceEventType,
     message: string,
     metadata?: Record<string, unknown>
 ): void {
-    if (!isDev) return;
+    record("warn", eventType, message, metadata);
 
+    if (!isDev) return;
     console.warn(`[COMPLIANCE AUDIT] [${eventType}] ${message}`, metadata || {});
 }
 
 /**
  * Log a compliance event in development mode.
  * Use this for non-warning audit events (info-level).
- *
- * @param eventType - Type of compliance event
- * @param message - Description of the event (no PHI/PII)
- * @param metadata - Additional context (no PHI/PII)
- *
- * @example
- * auditComplianceEvent("data_cleared", "User cleared stored analysis", {
- *   trigger: "manual_button_click"
- * });
  */
 export function auditComplianceEvent(
     eventType: ComplianceEventType,
     message: string,
     metadata?: Record<string, unknown>
 ): void {
-    if (!isDev) return;
+    record("info", eventType, message, metadata);
 
+    if (!isDev) return;
     console.info(`[COMPLIANCE AUDIT] [${eventType}] ${message}`, metadata || {});
 }
 
 /**
  * Log when redaction is applied to text.
  * Does NOT log the actual text content.
- *
- * @param context - Where redaction occurred
- * @param textLength - Length of text being redacted (for context)
  */
 export function auditRedaction(context: string, textLength: number): void {
     auditComplianceEvent("redaction_applied", `Text redacted in ${context}`, {
@@ -79,9 +88,6 @@ export function auditRedaction(context: string, textLength: number): void {
 /**
  * Log when unsafe content is filtered.
  * Does NOT log the actual unsafe content.
- *
- * @param context - Where filtering occurred
- * @param filteredCount - Number of items filtered
  */
 export function auditSafetyFilter(context: string, filteredCount: number): void {
     if (filteredCount > 0) {
@@ -89,4 +95,20 @@ export function auditSafetyFilter(context: string, filteredCount: number): void 
             timestamp: new Date().toISOString(),
         });
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Test-only helpers (no PHI). Safe to ship, but not used in production.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function getAuditStateForTests() {
+    return {
+        totalEvents,
+        events: [...events],
+    };
+}
+
+export function resetAuditForTests() {
+    totalEvents = 0;
+    events.length = 0;
 }
