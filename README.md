@@ -78,12 +78,41 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## Architecture
 
-```
-PDF Upload → Extract Text → Redact PHI → AI Analysis → Safety Filter → Zod Validation → UI
-                                                                              ↓
-                                                                      localStorage (24h TTL)
-                                                                              ↓
-                                                                      Lab Trend Comparison
+### Request Pipeline
+
+```mermaid
+flowchart TD
+    A(["🧑 Patient\nUploads PDF"]) --> B["POST /api/analyze"]
+
+    subgraph API ["⚙️ API Route — /api/analyze"]
+        B --> C["📄 extractText()\npdf-parse"]
+        C --> D["🔒 redact()\nStrip PHI"]
+        D --> E["🤖 analyzeDocument()\nLLM Call"]
+        E --> F{"API Key\nPresent?"}
+        F -- Yes --> G["Google Gemini\nor OpenAI GPT-4o-mini"]
+        F -- No --> H["📦 Mock Mode\nSample data"]
+        G --> I["🛡️ safetyFilter()\nRemove overreach"]
+        H --> I
+        I --> J["✅ validateAnalysisResult()\nZod schema check"]
+        J -- Invalid --> K["🔄 Retry once\nwith schema errors"]
+        K --> J
+        J -- Valid --> L["📡 Return AnalysisResult JSON"]
+    end
+
+    subgraph Browser ["🖥️ Browser"]
+        L --> M["💾 saveAnalysis()\nlocalStorage — 24h TTL"]
+        M --> N["📊 Results Page"]
+        N --> O["📈 LabsTable\n+ Trend Indicators"]
+        N --> P["💊 MedicationCards\n+ DischargeChecklist"]
+        N --> Q["❓ QuestionsForDoctor"]
+        M --> R["🕐 loadHistory()\nTrend Comparison"]
+        R --> O
+    end
+
+    subgraph Outputs ["📤 Export / Share"]
+        N --> S["🖨️ Print Report\n/results/print"]
+        N --> T["👨‍⚕️ Clinician Note\n/clinician/review"]
+    end
 ```
 
 ### Project Structure
@@ -91,20 +120,41 @@ PDF Upload → Extract Text → Redact PHI → AI Analysis → Safety Filter →
 ```
 src/
 ├── app/
-│   ├── api/analyze/        ← PDF upload + AI pipeline endpoint
-│   ├── page.tsx            ← Landing
-│   ├── upload/             ← File picker + options
-│   ├── results/            ← Analysis display + print view
-│   └── clinician/review/   ← Clinician-facing summary
-├── components/             ← LabsTable, MedicationCards, DischargeChecklist, etc.
+│   ├── api/
+│   │   ├── analyze/        ← PDF upload + full AI pipeline
+│   │   └── health/         ← Health check endpoint
+│   ├── page.tsx            ← Landing page
+│   ├── upload/             ← File picker + document type & reading level options
+│   ├── results/
+│   │   ├── page.tsx        ← Full analysis display
+│   │   └── print/          ← Print-ready formatted report
+│   └── clinician/review/   ← Clinician-facing structured summary
+├── components/
+│   ├── LabsTable.tsx       ← Lab results with flag + trend indicators
+│   ├── LabRangeBar.tsx     ← Visual normal/abnormal range bar
+│   ├── MedicationCards.tsx ← Discharge medication list
+│   ├── DischargeChecklist.tsx
+│   ├── QuestionsForDoctor.tsx
+│   ├── DisclaimerBanner.tsx
+│   ├── SummaryCard.tsx
+│   └── Loading.tsx
 ├── contracts/
-│   └── analysisSchema.ts   ← Zod schema (source of truth — do not change without migration)
+│   └── analysisSchema.ts   ← ⚠️ Zod schema — source of truth (migration required to change)
 └── lib/
-    ├── ai/                 ← analyzeDocument, multi-provider (Gemini/OpenAI)
-    ├── safety/             ← redact(), safetyFilter()
-    ├── compliance/         ← 24h TTL policy, audit logging
-    ├── observability/      ← logger, rate limiter
-    └── persistence/        ← localStorage history (v2, 10-entry cap)
+    ├── ai/
+    │   ├── analyzeDocument.ts   ← Core AI pipeline (redact → call → retry → validate)
+    │   └── providers/           ← openai.ts, gemini.ts, types.ts
+    ├── safety/
+    │   ├── redact.ts            ← PHI removal before AI call
+    │   └── safetyFilter.ts      ← Post-AI medical overreach filter
+    ├── compliance/
+    │   ├── dataPolicy.ts        ← 24h TTL constants + isExpired()
+    │   └── audit.ts             ← Compliance audit event logging
+    ├── observability/
+    │   ├── logger.ts            ← Structured PHI-free logging
+    │   └── rateLimiter.ts       ← Request rate limiting
+    └── persistence/
+        └── analysisStorage.ts   ← localStorage v2 (10-entry history, auto-prune)
 ```
 
 ---
