@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { SummaryCard } from "@/components/SummaryCard";
+import { AnalysisChat } from "@/components/AnalysisChat";
 import { clearAnalysis, loadAnalysis } from "@/lib/persistence/analysisStorage";
 
 export default function ResultsPage() {
@@ -149,6 +150,12 @@ export default function ResultsPage() {
                                 </ul>
                             </section>
                         )}
+
+                        {/* Analysis Chatbot */}
+                        <AnalysisChat
+                            result={result}
+                            suggestedQuestions={result.questionsForDoctor ?? []}
+                        />
                     </>
                 )
             }
