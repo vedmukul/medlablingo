@@ -23,6 +23,15 @@ const RequestSchema = z.object({
 
 const MAX_TEXT_LENGTH = 50_000; // 50k chars
 
+// Valid stage names for progress tracking
+type StageName =
+    | "parse_formdata"
+    | "validate_input"
+    | "pdf_extract"
+    | "preview_redact"
+    | "ai_analyze"
+    | "safety_filter";
+
 function getClientIp(request: Request): string {
     const xff = request.headers.get("x-forwarded-for");
     if (xff) {
@@ -51,24 +60,41 @@ export async function POST(request: Request) {
     const requestId = randomUUID();
     const startTime = Date.now();
     const durations: Record<string, number> = {};
+    const stagesCompleted: StageName[] = [];
     const route = "/api/analyze";
 
-    function track<T>(stage: string, fn: () => T): T {
+    function track<T>(stage: StageName, fn: () => T): T {
         const start = Date.now();
         try {
-            return fn();
+            const result = fn();
+            stagesCompleted.push(stage);
+            return result;
         } finally {
             durations[stage] = Date.now() - start;
         }
     }
 
-    async function trackAsync<T>(stage: string, fn: () => Promise<T>): Promise<T> {
+    async function trackAsync<T>(stage: StageName, fn: () => Promise<T>): Promise<T> {
         const start = Date.now();
         try {
-            return await fn();
+            const result = await fn();
+            stagesCompleted.push(stage);
+            return result;
         } finally {
             durations[stage] = Date.now() - start;
         }
+    }
+
+    // Helper to build safe response metadata
+    function getProgressMetadata() {
+        return {
+            requestId,
+            stagesCompleted: [...stagesCompleted],
+            stageDurations: {
+                ...durations,
+                total: Date.now() - startTime,
+            },
+        };
     }
 
     // 0) Rate Limit Guard
@@ -82,7 +108,12 @@ export async function POST(request: Request) {
         });
 
         const res = NextResponse.json(
-            { ok: false, error: "Too many requests", hint: "Please wait a moment before trying again.", requestId },
+            {
+                ok: false,
+                error: "Too many requests",
+                hint: "Please wait a moment before trying again.",
+                ...getProgressMetadata(),
+            },
             { status: 429 }
         );
         res.headers.set("x-request-id", requestId);
@@ -121,11 +152,10 @@ export async function POST(request: Request) {
         } catch {
             logger.error({
                 eventName: "analyze.failed",
-                requestId,
                 route,
                 errorCategory: "EXTRACTION",
                 errorCode: "BAD_PDF",
-                durations: { ...durations, total: Date.now() - startTime },
+                ...getProgressMetadata(),
             });
 
             const res = NextResponse.json(
@@ -133,7 +163,8 @@ export async function POST(request: Request) {
                     ok: false,
                     error: "Text extraction failed",
                     hint: "Try a clearer PDF or text-selectable PDF",
-                    requestId,
+                    errorCode: "BAD_PDF",
+                    ...getProgressMetadata(),
                 },
                 { status: 422 }
             );
@@ -144,11 +175,10 @@ export async function POST(request: Request) {
         if (!extractedText.trim()) {
             logger.warn({
                 eventName: "analyze.failed",
-                requestId,
                 route,
                 errorCategory: "EXTRACTION",
                 errorCode: "EMPTY_TEXT",
-                durations: { ...durations, total: Date.now() - startTime },
+                ...getProgressMetadata(),
             });
 
             const res = NextResponse.json(
@@ -156,7 +186,8 @@ export async function POST(request: Request) {
                     ok: false,
                     error: "No text found",
                     hint: "The PDF might be scanned images. Try a digital PDF.",
-                    requestId,
+                    errorCode: "EMPTY_TEXT",
+                    ...getProgressMetadata(),
                 },
                 { status: 422 }
             );
@@ -202,15 +233,14 @@ export async function POST(request: Request) {
         // 8) Completion log
         logger.info({
             eventName: "analyze.completed",
-            requestId,
             route,
             documentType: dt,
             readingLevel: rl,
             extractedTextLength: extractedText.length,
             previewLength: extractionPreview.length,
-            durations: { ...durations, total: Date.now() - startTime },
             truncated: isTruncated,
             status: "ok",
+            ...getProgressMetadata(),
         });
 
         // 9) Return safe payload + header
@@ -221,7 +251,7 @@ export async function POST(request: Request) {
             extractedTextLength: extractedText.length,
             extractionPreview,
             result: safeAnalysis,
-            requestId,
+            ...getProgressMetadata(),
         });
 
         res.headers.set("x-request-id", requestId);
@@ -254,19 +284,19 @@ export async function POST(request: Request) {
 
         logger.error({
             eventName: "analyze.failed",
-            requestId,
             route,
             errorCategory,
             errorCode,
-            durations: { ...durations, total: Date.now() - startTime },
             errorObject: error, // logger sanitizes Error safely
+            ...getProgressMetadata(),
         });
 
         const res = NextResponse.json(
             {
                 ok: false,
                 error: errorMessage,
-                requestId,
+                errorCode,
+                ...getProgressMetadata(),
                 ...(process.env.NODE_ENV === "development" && {
                     details: error instanceof Error ? error.message : String(error),
                 }),

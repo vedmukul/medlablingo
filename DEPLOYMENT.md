@@ -1,6 +1,6 @@
-# LabLingo Deployment Guide
+# MedLabLingo Deployment Guide
 
-Complete checklist and troubleshooting guide for deploying LabLingo to Vercel.
+Complete checklist and troubleshooting guide for deploying MedLabLingo to Vercel.
 
 ## Pre-Deployment Checklist
 
@@ -30,9 +30,24 @@ Complete checklist and troubleshooting guide for deploying LabLingo to Vercel.
 
 - [ ] `.env.example` is up to date with all required variables
 - [ ] `.env.local` is in `.gitignore` (verify it won't be committed)
-- [ ] Decide whether to deploy with or without `OPENAI_API_KEY`
-  - **Without key**: Mock mode (free, safe for demos)
-  - **With key**: Real AI analysis (costs apply, review OpenAI pricing)
+- [ ] Decide which AI provider to use (or use mock mode):
+  
+  **Option A: Google AI (Recommended)**
+  - ✅ Latest Gemini 3 Flash Preview model
+  - ✅ Massive 10^7 token context window
+  - ✅ Very low cost ($0.60/1M input tokens)
+  - ✅ Best reasoning quality
+  - Get key: [Google AI Studio](https://aistudio.google.com/app/apikey)
+  
+  **Option B: OpenAI**
+  - Requires credit card
+  - Pay per use (review OpenAI pricing)
+  - Get key: [OpenAI Platform](https://platform.openai.com/api-keys)
+  
+  **Option C: Mock Mode**
+  - No API key needed
+  - Perfect for demos and testing
+  - Returns realistic sample data
 
 ### ✅ Security Review
 
@@ -81,14 +96,31 @@ git push -u origin main
 **For mock mode deployment** (recommended for demos):
 - Skip this step entirely
 - App will run in mock mode automatically
+- Perfect for testing and demonstrations
 
-**For real AI analysis**:
-1. In Vercel dashboard → Your Project → Settings → Environment Variables
-2. Add variable:
+**For AI-powered analysis** (choose one):
+
+**Option A: Google AI (Recommended)** 
+1. Get free API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. In Vercel dashboard → Your Project → Settings → Environment Variables
+3. Add variable:
+   - **Name**: `GOOGLE_AI_API_KEY`
+   - **Value**: Your Google AI API key
+   - **Environment**: Production (and Preview if desired)
+4. Click "Save"
+   
+**Benefits**: Gen 3 quality, massive context (10^7 tokens), low cost ($0.60/1M tokens)
+
+**Option B: OpenAI** 
+1. Get API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+2. In Vercel dashboard → Your Project → Settings → Environment Variables
+3. Add variable:
    - **Name**: `OPENAI_API_KEY`
    - **Value**: `sk-...` (your OpenAI API key)
    - **Environment**: Production (and Preview if desired)
-3. Click "Save"
+4. Click "Save"
+
+**Note**: You can set both keys. If both are present, Google AI is used first (faster + cheaper).
 
 ### 4. Deploy
 

@@ -23,13 +23,19 @@ const DocumentTypeSchema = z.enum(["lab_report", "discharge_instructions"]);
 const ReadingLevelSchema = z.enum(["simple", "standard"]);
 const ProvenanceSourceSchema = z.enum(["pdf_upload", "ehr_fhir", "paste"]);
 
+/**
+ * Confidence score for AI-generated content (0.0 = no confidence, 1.0 = full confidence)
+ * Optional to maintain backward compatibility with schema v1.0.0
+ */
+const ConfidenceScoreSchema = z.number().min(0).max(1).optional();
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Meta Section
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MetaSchema = z
     .object({
-        schemaVersion: z.literal("1.0.0"),
+        schemaVersion: z.enum(["1.0.0", "1.1.0"]), // Accept both for backward compatibility
         createdAt: z.string().datetime(), // ISO 8601 string
         documentType: DocumentTypeSchema,
         readingLevel: ReadingLevelSchema,
@@ -42,6 +48,13 @@ const MetaSchema = z
             limitations: z.array(z.string()),
             emergencyNote: z.string(),
         }),
+        modelInfo: z
+            .object({
+                provider: z.enum(["openai", "google", "mock"]),
+                modelName: z.string(),
+                temperature: z.number(),
+            })
+            .optional(),
     })
     .strict();
 
@@ -52,7 +65,9 @@ const MetaSchema = z
 const PatientSummarySchema = z
     .object({
         overallSummary: z.string(),
+        overallSummaryConfidence: ConfidenceScoreSchema,
         keyTakeaways: z.array(z.string()).min(3).max(7),
+        keyTakeawaysConfidence: z.array(ConfidenceScoreSchema).optional(),
     })
     .strict();
 
@@ -79,6 +94,7 @@ const LabItemSchema = z
         flag: LabFlagSchema,
         importance: LabImportanceSchema,
         explanation: z.string(),
+        confidenceScore: ConfidenceScoreSchema,
     })
     .strict();
 
@@ -127,6 +143,7 @@ const BaseAnalysisSchema = z.object({
     meta: MetaSchema,
     patientSummary: PatientSummarySchema,
     questionsForDoctor: z.array(z.string()).min(5).max(10),
+    questionsForDoctorConfidence: z.array(ConfidenceScoreSchema).optional(),
     whatWeCouldNotDetermine: z.array(z.string()),
 });
 
@@ -241,4 +258,5 @@ export {
     LabFlagSchema,
     LabImportanceSchema,
     DischargeStatusSchema,
+    ConfidenceScoreSchema,
 };

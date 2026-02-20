@@ -1,5 +1,5 @@
 /**
- * Data retention policy for LabLingo.
+ * Data retention policy for MedLabLingo.
  * Defines TTL, storage keys, and compliance metadata for educational healthcare document handling.
  */
 

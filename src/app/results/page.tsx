@@ -79,26 +79,31 @@ export default function ResultsPage() {
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-semibold">Analysis Results</h1>
 
-                <div className="flex items-center gap-4">
-                    <Link href="/clinician/review" className="text-sm text-blue-600">
+                <div className="flex gap-4 text-sm items-center">
+                    <button
+                        onClick={() => window.open('/results/print', '_blank')}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-medium transition-colors"
+                    >
+                        📄 Export PDF
+                    </button>
+                    <Link href="/clinician/review" className="text-blue-600 hover:text-blue-800">
                         Clinician review →
                     </Link>
-
                     <button
                         onClick={() => {
                             clearAnalysis();
                             location.reload();
                         }}
-                        className="text-sm text-gray-500 hover:text-gray-800"
+                        className="text-gray-500 hover:text-gray-800"
                     >
                         Clear saved
                     </button>
-
-                    <Link href="/upload" className="text-sm text-blue-600">
-                        ← Analyze another
+                    <Link href="/upload" className="text-blue-600 hover:text-blue-800">
+                        ← Upload again
                     </Link>
                 </div>
             </div>
+
 
             <DisclaimerBanner />
 
@@ -118,39 +123,41 @@ export default function ResultsPage() {
             </section>
 
             {/* AI Summary */}
-            {result && (
-                <>
-                    <section className="border rounded-lg p-4">
-                        <h2 className="font-medium mb-2">What this document says</h2>
-                        <p>{result.patientSummary?.overallSummary}</p>
-
-                        {!!result.patientSummary?.keyTakeaways?.length && (
-                            <ul className="list-disc ml-5 mt-2">
-                                {result.patientSummary.keyTakeaways.map((k: string, i: number) => (
-                                    <li key={i}>{k}</li>
-                                ))}
-                            </ul>
-                        )}
-                    </section>
-
-                    {!!result.questionsForDoctor?.length && (
+            {
+                result && (
+                    <>
                         <section className="border rounded-lg p-4">
-                            <h2 className="font-medium mb-2">Questions to ask your doctor</h2>
-                            <ul className="list-decimal ml-5">
-                                {result.questionsForDoctor.map((q: string, i: number) => (
-                                    <li key={i}>{q}</li>
-                                ))}
-                            </ul>
+                            <h2 className="font-medium mb-2">What this document says</h2>
+                            <p>{result.patientSummary?.overallSummary}</p>
+
+                            {!!result.patientSummary?.keyTakeaways?.length && (
+                                <ul className="list-disc ml-5 mt-2">
+                                    {result.patientSummary.keyTakeaways.map((k: string, i: number) => (
+                                        <li key={i}>{k}</li>
+                                    ))}
+                                </ul>
+                            )}
                         </section>
-                    )}
-                </>
-            )}
+
+                        {!!result.questionsForDoctor?.length && (
+                            <section className="border rounded-lg p-4">
+                                <h2 className="font-medium mb-2">Questions to ask your doctor</h2>
+                                <ul className="list-decimal ml-5">
+                                    {result.questionsForDoctor.map((q: string, i: number) => (
+                                        <li key={i}>{q}</li>
+                                    ))}
+                                </ul>
+                            </section>
+                        )}
+                    </>
+                )
+            }
 
             <div className="text-center">
                 <Link href="/" className="text-sm text-gray-600">
                     Back to Home
                 </Link>
             </div>
-        </main>
+        </main >
     );
 }

@@ -7,7 +7,7 @@ export default function Home() {
             <div className="max-w-md w-full space-y-8">
                 <div className="text-center">
                     <h1 className="text-4xl font-extrabold text-indigo-600 tracking-tight sm:text-5xl">
-                        LabLingo
+                        MedLabLingo
                     </h1>
                     <p className="mt-2 text-base text-gray-500">
                         Understand your medical documents with AI.

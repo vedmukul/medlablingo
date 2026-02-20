@@ -24,7 +24,7 @@ function formatClinicianNote(data: AnalysisData): string {
     const uncertainties: string[] = Array.isArray(r?.whatWeCouldNotDetermine) ? r.whatWeCouldNotDetermine : [];
 
     const lines: string[] = [];
-    lines.push("LabLingo (Educational Assist) — Clinician Review Note");
+    lines.push("MedLabLingo (Educational Assist) — Clinician Review Note");
     lines.push(`DocumentType: ${docType} | ReadingLevel: ${reading} | ExtractedTextLength: ${len}`);
     if ((data as any)?.requestId) lines.push(`RequestId: ${(data as any).requestId}`);
     if (meta?.createdAt) lines.push(`CreatedAt: ${meta.createdAt}`);

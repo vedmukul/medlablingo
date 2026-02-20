@@ -14,17 +14,32 @@ export interface AnalyzeDocumentInput {
 }
 
 /**
+ * Model provider type
+ */
+type ModelProvider = "openai" | "google" | "mock";
+
+/**
+ * Model information for tracking which model was used
+ */
+interface ModelInfo {
+    provider: ModelProvider;
+    modelName: string;
+    temperature: number;
+}
+
+/**
  * Analyzes a document and returns structured, validated results.
  *
  * This function:
  * 1. Redacts PII from input text
- * 2. Sends redacted text to OpenAI with structured prompts
+ * 2. Sends redacted text to OpenAI with structured prompts requesting confidence scores
  * 3. Validates the response against AnalysisSchema
- * 4. Retries once if validation fails
- * 5. Returns mock data if no API key is configured
+ * 4. Post-processes confidence arrays to ensure length matches
+ * 5. Retries once if validation fails
+ * 6. Returns mock data if no API key is configured
  *
  * @param input - Document text, type, and reading level
- * @returns Promise<AnalysisResult> - Validated analysis result
+ * @returns Promise<AnalysisResult> - Validated analysis result with confidence signals
  * @throws Error if validation fails after retry or API call fails
  *
  * @example
@@ -62,24 +77,36 @@ export async function analyzeDocument(
         return getMockAnalysisResult(documentType, readingLevel);
     }
 
+    // Model configuration
+    const modelInfo: ModelInfo = {
+        provider: "openai",
+        modelName: "gpt-4o-mini",
+        temperature: 0.3,
+    };
+
     // Step 1: Redact PII before sending to LLM
     const redactedText = redact(text);
 
-    // Step 2: Build LLM prompt
+    // Step 2: Build LLM prompt with confidence guidance
     const systemPrompt = buildSystemPrompt(documentType, readingLevel);
     const userPrompt = buildUserPrompt(redactedText, documentType);
 
     // Step 3: Call OpenAI API
     let llmResponse: string;
     try {
-        llmResponse = await callOpenAI(systemPrompt, userPrompt, apiKey);
+        llmResponse = await callOpenAI(
+            systemPrompt,
+            userPrompt,
+            apiKey,
+            modelInfo
+        );
     } catch (error) {
         throw new Error(
             `Failed to analyze document: ${error instanceof Error ? error.message : "Unknown error"}`
         );
     }
 
-    // Step 4: Parse and validate response
+    // Step 4: Parse and post-process response
     let parsedResponse: unknown;
     try {
         parsedResponse = JSON.parse(llmResponse);
@@ -88,6 +115,9 @@ export async function analyzeDocument(
             "LLM returned invalid JSON. Please try again or contact support."
         );
     }
+
+    // Post-process: add modelInfo to meta and clean up confidence arrays
+    parsedResponse = postProcessResponse(parsedResponse, modelInfo);
 
     const validationResult = validateAnalysisResult(parsedResponse);
 
@@ -109,7 +139,12 @@ export async function analyzeDocument(
 
     let retryResponse: string;
     try {
-        retryResponse = await callOpenAI(systemPrompt, retryPrompt, apiKey);
+        retryResponse = await callOpenAI(
+            systemPrompt,
+            retryPrompt,
+            apiKey,
+            modelInfo
+        );
     } catch (error) {
         throw new Error(
             `Retry failed: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -126,6 +161,9 @@ export async function analyzeDocument(
         );
     }
 
+    // Post-process retry response
+    retryParsed = postProcessResponse(retryParsed, modelInfo);
+
     const retryValidation = validateAnalysisResult(retryParsed);
 
     if (retryValidation.ok) {
@@ -139,7 +177,110 @@ export async function analyzeDocument(
 }
 
 /**
+ * Post-processes the LLM response to ensure schema compliance
+ * - Adds modelInfo to meta if not present
+ * - Validates parallel confidence arrays match their data arrays
+ * - Drops confidence arrays if mismatched rather than failing
+ */
+function postProcessResponse(
+    response: unknown,
+    modelInfo: ModelInfo
+): unknown {
+    if (!response || typeof response !== "object") {
+        return response;
+    }
+
+    const result = response as any;
+
+    // Add modelInfo to meta if meta exists
+    if (result.meta && typeof result.meta === "object") {
+        if (!result.meta.modelInfo) {
+            result.meta.modelInfo = {
+                provider: modelInfo.provider,
+                modelName: modelInfo.modelName,
+                temperature: modelInfo.temperature,
+            };
+        }
+    }
+
+    // Handle parallel confidence arrays if they exist
+    // Example: keyTakeaways and keyTakeawaysConfidence
+    if (result.patientSummary && typeof result.patientSummary === "object") {
+        const summary = result.patientSummary;
+
+        // If confidence arrays exist but don't match length, drop them
+        if (
+            Array.isArray(summary.keyTakeaways) &&
+            Array.isArray(summary.keyTakeawaysConfidence)
+        ) {
+            if (
+                summary.keyTakeaways.length !==
+                summary.keyTakeawaysConfidence.length
+            ) {
+                console.warn(
+                    "[postProcessResponse] Dropping keyTakeawaysConfidence due to length mismatch"
+                );
+                delete summary.keyTakeawaysConfidence;
+            }
+        }
+    }
+
+    // Handle lab confidence arrays
+    if (result.labsSection && typeof result.labsSection === "object") {
+        const labsSection = result.labsSection;
+
+        if (Array.isArray(labsSection.labs)) {
+            labsSection.labs = labsSection.labs.map((lab: any) => {
+                // If lab has confidence arrays that don't match, drop them
+                if (
+                    lab.explanationConfidence !== undefined &&
+                    typeof lab.explanationConfidence !== "number"
+                ) {
+                    delete lab.explanationConfidence;
+                }
+                return lab;
+            });
+        }
+    }
+
+    // Handle discharge section confidence arrays
+    if (
+        result.dischargeSection &&
+        typeof result.dischargeSection === "object"
+    ) {
+        const discharge = result.dischargeSection;
+
+        // Drop confidence arrays if they don't match their data arrays
+        const arrayPairs = [
+            ["homeCareSteps", "homeCareStepsConfidence"],
+            ["medications", "medicationsConfidence"],
+            ["followUp", "followUpConfidence"],
+            ["warningSignsFromDoc", "warningSignsFromDocConfidence"],
+            ["generalRedFlags", "generalRedFlagsConfidence"],
+            ["diagnosesMentionedInDoc", "diagnosesMentionedInDocConfidence"],
+        ];
+
+        for (const [dataKey, confidenceKey] of arrayPairs) {
+            if (
+                Array.isArray(discharge[dataKey]) &&
+                Array.isArray(discharge[confidenceKey])
+            ) {
+                if (discharge[dataKey].length !== discharge[confidenceKey].length) {
+                    console.warn(
+                        `[postProcessResponse] Dropping ${confidenceKey} due to length mismatch`
+                    );
+                    delete discharge[confidenceKey];
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+/**
  * Builds the system prompt based on document type and reading level
+ * Now includes guidance on confidence scoring
  */
 function buildSystemPrompt(
     documentType: "lab_report" | "discharge_instructions",
@@ -165,11 +306,22 @@ DOCUMENT TYPE: ${documentType}
 READING LEVEL: ${readingLevel}
 STYLE GUIDANCE: ${readingLevelGuidance}
 
+CONFIDENCE SCORING GUIDELINES:
+- Include optional confidence scores (0.0 to 1.0) where appropriate
+- Base confidence on:
+  * Document clarity: Is the information clearly stated?
+  * Explicitness: Is the information directly stated or inferred?
+  * Completeness: Is all necessary context present?
+- ONLY include confidence scores when you have a reasonable basis for the score
+- If unsure about confidence, OMIT the confidence field entirely (do not guess or hallucinate)
+- Confidence scores help users understand which information is more certain vs. inferred
+
 OUTPUT FORMAT:
 - Respond with ONLY valid JSON
 - Do NOT include markdown code fences (\`\`\`json)
 - Do NOT include any explanatory text before or after the JSON
 - The JSON must exactly match the required schema for ${documentType}
+- Include modelInfo will be added automatically (do not include it)
 
 REQUIRED FIELDS:
 - meta: metadata about the analysis (schemaVersion: "1.0.0", createdAt, documentType, readingLevel, language, provenance, safety)
@@ -182,7 +334,7 @@ Remember: Educational only, not medical advice. Always include safety disclaimer
 }
 
 /**
- * Builds the user prompt with document text
+ * Builds the user prompt with document text and confidence guidance
  */
 function buildUserPrompt(
     redactedText: string,
@@ -198,7 +350,9 @@ Remember:
 2. Match the exact schema for ${documentType}
 3. ${documentType === "lab_report" ? "Include labsSection, set dischargeSection to undefined" : "Include dischargeSection, set labsSection to undefined"}
 4. Educational only - no diagnosis, treatment advice, or medication changes
-5. Include appropriate safety disclaimers`;
+5. Include appropriate safety disclaimers
+6. Add confidence scores (0.0-1.0) where you have reasonable certainty based on document clarity and explicitness
+7. If unsure about a confidence value, omit it rather than guessing`;
 }
 
 /**
@@ -235,7 +389,8 @@ Output the FIXED JSON now (no markdown, no explanation, just the JSON):`;
 async function callOpenAI(
     systemPrompt: string,
     userPrompt: string,
-    apiKey: string
+    apiKey: string,
+    modelInfo: ModelInfo
 ): Promise<string> {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -244,13 +399,13 @@ async function callOpenAI(
             Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-            model: "gpt-4o-mini",
+            model: modelInfo.modelName,
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userPrompt },
             ],
             response_format: { type: "json_object" },
-            temperature: 0.3,
+            temperature: modelInfo.temperature,
         }),
     });
 
@@ -321,7 +476,8 @@ function getMockAnalysisResult(
                 "Real analysis pending API key configuration",
             ],
             labsSection: {
-                overallLabNote: "Mock lab analysis - configure API key for real results",
+                overallLabNote:
+                    "Mock lab analysis - configure API key for real results",
                 labs: [],
             },
             dischargeSection: undefined,

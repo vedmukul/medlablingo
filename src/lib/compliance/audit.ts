@@ -13,7 +13,8 @@ export type ComplianceEventType =
     | "data_retention_expired"
     | "data_cleared"
     | "unsafe_content_filtered"
-    | "redaction_applied";
+    | "redaction_applied"
+    | "storage_migration";
 
 /**
  * In-memory audit state (NO PHI).

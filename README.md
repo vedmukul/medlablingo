@@ -1,4 +1,4 @@
-# LabLingo
+# MedLabLingo
 
 Educational tool for understanding healthcare documents. **Not medical advice. Not HIPAA compliant.**
 
@@ -20,12 +20,26 @@ Educational tool for understanding healthcare documents. **Not medical advice. N
    cp .env.example .env.local
    ```
    
-   Edit `.env.local` and add your OpenAI API key if you want real AI analysis:
+   Edit `.env.local` and add an AI provider API key (choose one or both):
+   
+   **Option A: Google AI (Recommended)**
+   ```bash
+   GOOGLE_AI_API_KEY=your-google-key-here
+   ```
+   Get your key: [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - ✅ **Latest Gen 3 model**: Gemini 3 Flash Preview
+   - ✅ **Massive context**: 10^7 tokens (handles very long documents)
+   - ✅ **Cost-effective**: $0.60/1M input tokens (pennies per analysis)
+   
+   **Option B: OpenAI**
    ```bash
    OPENAI_API_KEY=sk-your-key-here
    ```
+   Get your key: [OpenAI Platform](https://platform.openai.com/api-keys)
    
-   **Note**: If you skip this step, the app runs in **mock mode** with realistic sample data.
+   **Provider Priority**: If both keys are set, Google AI is used first (faster + cheaper).
+   
+   **Note**: If you skip this step entirely, the app runs in **mock mode** with realistic sample data.
 
 3. **Start development server**
    ```bash
@@ -38,13 +52,16 @@ Educational tool for understanding healthcare documents. **Not medical advice. N
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `OPENAI_API_KEY` | No | _(mock mode)_ | OpenAI API key for AI analysis. If not set, returns realistic mock data. |
+| `GOOGLE_AI_API_KEY` | No | _(mock mode)_ | **Recommended**. Google Gemini API key. Free tier available. Used first if present. |
+| `OPENAI_API_KEY` | No | _(mock mode)_ | OpenAI API key. Fallback if Google key not set. |
 
-**Mock Mode**: When `OPENAI_API_KEY` is not configured, the app functions fully with sample analysis results. Perfect for development and testing without API costs.
+**Provider Priority**: Google AI (if key set) → OpenAI (if key set) → Mock mode (no keys)
+
+**Mock Mode**: When no API keys are configured, the app functions fully with sample analysis results. Perfect for development and testing without API costs.
 
 ### Running Tests
 
-LabLingo includes comprehensive test suites for safety, observability, compliance, and AI integration:
+MedLabLingo includes comprehensive test suites for safety, observability, compliance, and AI integration:
 
 ```bash
 # Run all tests
@@ -71,7 +88,7 @@ npm start
 
 ## Deploying to Vercel
 
-LabLingo is optimized for deployment on Vercel with zero configuration.
+MedLabLingo is optimized for deployment on Vercel with zero configuration.
 
 ### Quick Deploy
 
@@ -131,7 +148,7 @@ For a comprehensive deployment guide, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ### Educational Use Only ⚠️
 
-LabLingo is an **educational demonstration** for helping patients understand their medical documents. It is:
+MedLabLingo is an **educational demonstration** for helping patients understand their medical documents. It is:
 - **NOT a medical device**
 - **NOT HIPAA compliant**
 - **NOT suitable for production healthcare use**

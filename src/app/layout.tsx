@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-    title: "LabLingo",
+    title: "MedLabLingo",
     description: "Educational lab analysis tool",
 };
 
