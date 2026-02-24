@@ -30,7 +30,7 @@ export class ClaudeProvider implements AIProvider {
             });
 
             const text = this.extractText(message);
-            return this.stripCodeFences(text);
+            return this.extractJson(text);
         } catch (error) {
             throw this.wrapError(error);
         }
@@ -68,15 +68,32 @@ export class ClaudeProvider implements AIProvider {
     }
 
     /**
-     * Claude may wrap JSON in markdown code fences — strip them.
+     * Extracts JSON from Claude's response, handling:
+     * - Plain JSON responses
+     * - Markdown code fences (```json...```)
+     * - Extra text before/after the JSON object
      */
-    private stripCodeFences(text: string): string {
-        let result = text.trim();
-        if (result.startsWith("```")) {
-            result = result.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+    private extractJson(text: string): string {
+        const trimmed = text.trim();
+
+        // Fast path: already valid JSON
+        if (trimmed.startsWith("{")) return trimmed;
+
+        // Find outermost JSON object by scanning for first { and last }
+        const start = trimmed.indexOf("{");
+        const end = trimmed.lastIndexOf("}");
+
+        if (start !== -1 && end !== -1 && end > start) {
+            return trimmed.slice(start, end + 1);
         }
-        return result;
+
+        // Fallback: strip code fences and return
+        return trimmed
+            .replace(/^```(?:json)?\s*/i, "")
+            .replace(/\s*```\s*$/, "")
+            .trim();
     }
+
 
     private wrapError(error: unknown): Error {
         if (error instanceof Anthropic.APIError) {
