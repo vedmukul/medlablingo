@@ -50,7 +50,7 @@ const MetaSchema = z
         }),
         modelInfo: z
             .object({
-                provider: z.enum(["openai", "google", "mock"]),
+                provider: z.enum(["openai", "google", "anthropic", "mock"]),
                 modelName: z.string(),
                 temperature: z.number(),
             })

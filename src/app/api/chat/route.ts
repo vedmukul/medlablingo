@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { safetyFilter } from "@/lib/safety/safetyFilter";
 import { logger } from "@/lib/observability/logger";
 import { checkRateLimit } from "@/lib/observability/rateLimiter";
+import { resolveProvider } from "@/lib/ai/providers/resolve";
 import { randomUUID, createHash } from "crypto";
 
 export const runtime = "nodejs";
@@ -50,7 +51,7 @@ function getMockReply(userMessage: string): string {
     if (userMessage.toLowerCase().includes("glucose") || userMessage.toLowerCase().includes("sugar")) {
         return "Based on your analysis, your glucose level was noted. For a detailed explanation of what this means for your health, please discuss with your doctor. This is educational information only.";
     }
-    return "I can help you understand your analysis results. This is a mock response since no AI key is configured. Configure OPENAI_API_KEY or GOOGLE_AI_API_KEY for real answers.";
+    return "I can help you understand your analysis results. This is a mock response since no AI key is configured. Configure ANTHROPIC_API_KEY, GOOGLE_AI_API_KEY, or OPENAI_API_KEY for real answers.";
 }
 
 export async function POST(request: Request) {
@@ -86,51 +87,43 @@ export async function POST(request: Request) {
         }
 
         // Validate and sanitize messages
-        const sanitizedMessages = messages
+        const sanitizedMessages: Array<{ role: "user" | "assistant"; content: string }> = messages
             .slice(-MAX_MESSAGES) // keep last N
             .map((m: any) => ({
-                role: m.role === "assistant" ? "assistant" : "user",
+                role: (m.role === "assistant" ? "assistant" : "user") as "user" | "assistant",
                 content: String(m.content ?? "").slice(0, MAX_USER_MSG_LENGTH),
             }))
-            .filter((m) => m.content.trim().length > 0);
+            .filter((m: { role: string; content: string }) => m.content.trim().length > 0);
 
-        const apiKey = process.env.OPENAI_API_KEY;
+        // Resolve AI provider (Anthropic → Google → OpenAI → Mock)
+        const provider = resolveProvider();
 
         // Mock mode
-        if (!apiKey) {
+        if (!provider) {
             const lastUserMsg = sanitizedMessages.filter((m) => m.role === "user").pop()?.content ?? "";
             const mockReply = getMockReply(lastUserMsg);
             return NextResponse.json({ ok: true, reply: mockReply, requestId });
         }
 
-        // Call OpenAI
+        // Call AI provider
         const systemPrompt = buildSystemPrompt(analysisResult);
 
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                model: "gpt-4o-mini",
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    ...sanitizedMessages,
-                ],
-                temperature: 0.5,
-                max_tokens: 400,
-            }),
-        });
-
-        if (!response.ok) {
-            const text = await response.text();
-            logger.error({ eventName: "chat.ai_error", requestId, status: response.status });
-            throw new Error(`AI API error (${response.status}): ${text}`);
+        let rawReply: string;
+        try {
+            if (provider.callChat) {
+                rawReply = await provider.callChat(systemPrompt, sanitizedMessages, {
+                    temperature: 0.5,
+                    maxTokens: 400,
+                });
+            } else {
+                // Fallback: use callAI with the last user message
+                const lastUserMsg = sanitizedMessages.filter((m) => m.role === "user").pop()?.content ?? "";
+                rawReply = await provider.callAI(systemPrompt, lastUserMsg);
+            }
+        } catch (error) {
+            logger.error({ eventName: "chat.ai_error", requestId });
+            throw error;
         }
-
-        const data = await response.json();
-        const rawReply: string = data.choices?.[0]?.message?.content ?? "I couldn't generate a response. Please try again.";
 
         // Apply safety filter
         const safeReply = safetyFilter({ reply: rawReply }) as { reply: string };

@@ -5,7 +5,7 @@ import { AIProvider } from "./types";
 
 /**
  * Google Gemini provider implementation using gemini-3-flash-preview
- * 
+ *
  * Benefits:
  * - Latest generation (Gen 3) - best reasoning quality
  * - Massive context window (10^7 tokens) - handles very long medical documents
@@ -39,6 +39,43 @@ export class GeminiProvider implements AIProvider {
             const result = await this.model.generateContent(combinedPrompt);
             const response = result.response;
             const text = response.text();
+
+            if (!text) {
+                throw new Error("Gemini returned empty response");
+            }
+
+            return text;
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new Error(`Gemini API error: ${error.message}`);
+            }
+            throw new Error("Gemini API error: Unknown error");
+        }
+    }
+
+    async callChat(
+        systemPrompt: string,
+        messages: Array<{ role: "user" | "assistant"; content: string }>,
+        options?: { temperature?: number; maxTokens?: number }
+    ): Promise<string> {
+        try {
+            // Gemini: combine system prompt + conversation into single prompt
+            const conversationText = messages
+                .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
+                .join("\n\n");
+            const combinedPrompt = `${systemPrompt}\n\nConversation so far:\n${conversationText}\n\nAssistant:`;
+
+            // Create a model without JSON mime type for chat (returns plain text)
+            const chatModel = this.client.getGenerativeModel({
+                model: "gemini-3-flash-preview",
+                generationConfig: {
+                    temperature: options?.temperature ?? 0.5,
+                    maxOutputTokens: options?.maxTokens ?? 400,
+                },
+            });
+
+            const result = await chatModel.generateContent(combinedPrompt);
+            const text = result.response.text();
 
             if (!text) {
                 throw new Error("Gemini returned empty response");

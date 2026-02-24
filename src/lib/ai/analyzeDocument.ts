@@ -3,6 +3,8 @@ import {
     validateAnalysisResult,
 } from "../../contracts/analysisSchema";
 import { redact } from "../safety/redact";
+import { resolveProvider, getModelInfo } from "./providers/resolve";
+import type { ModelInfo } from "./providers/resolve";
 
 /**
  * Input parameters for document analysis
@@ -14,25 +16,11 @@ export interface AnalyzeDocumentInput {
 }
 
 /**
- * Model provider type
- */
-type ModelProvider = "openai" | "google" | "mock";
-
-/**
- * Model information for tracking which model was used
- */
-interface ModelInfo {
-    provider: ModelProvider;
-    modelName: string;
-    temperature: number;
-}
-
-/**
  * Analyzes a document and returns structured, validated results.
  *
  * This function:
  * 1. Redacts PII from input text
- * 2. Sends redacted text to OpenAI with structured prompts requesting confidence scores
+ * 2. Sends redacted text to the resolved AI provider with structured prompts
  * 3. Validates the response against AnalysisSchema
  * 4. Post-processes confidence arrays to ensure length matches
  * 5. Retries once if validation fails
@@ -68,21 +56,16 @@ export async function analyzeDocument(
         throw new Error("Invalid input: text must be a non-empty string");
     }
 
-    // Check for API key - if missing, return mock data
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
+    // Resolve AI provider (Anthropic → Google → OpenAI → Mock)
+    const provider = resolveProvider();
+    if (!provider) {
         console.warn(
-            "[analyzeDocument] No OPENAI_API_KEY found - returning mock data"
+            "[analyzeDocument] No AI provider API key found - returning mock data"
         );
         return getMockAnalysisResult(documentType, readingLevel);
     }
 
-    // Model configuration
-    const modelInfo: ModelInfo = {
-        provider: "openai",
-        modelName: "gpt-4o-mini",
-        temperature: 0.3,
-    };
+    const modelInfo: ModelInfo = getModelInfo(provider);
 
     // Step 1: Redact PII before sending to LLM
     const redactedText = redact(text);
@@ -91,15 +74,10 @@ export async function analyzeDocument(
     const systemPrompt = buildSystemPrompt(documentType, readingLevel);
     const userPrompt = buildUserPrompt(redactedText, documentType);
 
-    // Step 3: Call OpenAI API
+    // Step 3: Call AI provider
     let llmResponse: string;
     try {
-        llmResponse = await callOpenAI(
-            systemPrompt,
-            userPrompt,
-            apiKey,
-            modelInfo
-        );
+        llmResponse = await provider.callAI(systemPrompt, userPrompt);
     } catch (error) {
         throw new Error(
             `Failed to analyze document: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -139,12 +117,7 @@ export async function analyzeDocument(
 
     let retryResponse: string;
     try {
-        retryResponse = await callOpenAI(
-            systemPrompt,
-            retryPrompt,
-            apiKey,
-            modelInfo
-        );
+        retryResponse = await provider.callAI(systemPrompt, retryPrompt);
     } catch (error) {
         throw new Error(
             `Retry failed: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -384,47 +357,6 @@ Output the FIXED JSON now (no markdown, no explanation, just the JSON):`;
 }
 
 /**
- * Calls OpenAI API with the given prompts
- */
-async function callOpenAI(
-    systemPrompt: string,
-    userPrompt: string,
-    apiKey: string,
-    modelInfo: ModelInfo
-): Promise<string> {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-            model: modelInfo.modelName,
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt },
-            ],
-            response_format: { type: "json_object" },
-            temperature: modelInfo.temperature,
-        }),
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-
-    if (!content) {
-        throw new Error("OpenAI returned empty response");
-    }
-
-    return content;
-}
-
-/**
  * Returns mock analysis result for testing without API key
  */
 function getMockAnalysisResult(
@@ -461,7 +393,7 @@ function getMockAnalysisResult(
                     "Mock analysis: This is sample data returned when no API key is configured.",
                 keyTakeaways: [
                     "This is mock data for testing",
-                    "Configure OPENAI_API_KEY for real analysis",
+                    "Configure ANTHROPIC_API_KEY, GOOGLE_AI_API_KEY, or OPENAI_API_KEY for real analysis",
                     "All values are placeholders",
                 ],
             },
@@ -493,7 +425,7 @@ function getMockAnalysisResult(
                     "Mock analysis: This is sample data returned when no API key is configured.",
                 keyTakeaways: [
                     "This is mock data for testing",
-                    "Configure OPENAI_API_KEY for real analysis",
+                    "Configure ANTHROPIC_API_KEY, GOOGLE_AI_API_KEY, or OPENAI_API_KEY for real analysis",
                     "All values are placeholders",
                 ],
             },
