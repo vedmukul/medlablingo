@@ -4,7 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { AIProvider } from "./types";
 
 /**
- * Anthropic Claude provider implementation using claude-sonnet-4-5-20250514
+ * Anthropic Claude provider implementation using claude-sonnet-4-5
  *
  * Benefits:
  * - Strong reasoning and instruction-following for medical document analysis
@@ -22,7 +22,7 @@ export class ClaudeProvider implements AIProvider {
     async callAI(systemPrompt: string, userPrompt: string): Promise<string> {
         try {
             const message = await this.client.messages.create({
-                model: "claude-sonnet-4-5-20250514",
+                model: "claude-sonnet-4-5",
                 max_tokens: 4096,
                 temperature: 0.3,
                 system: systemPrompt,
@@ -43,7 +43,7 @@ export class ClaudeProvider implements AIProvider {
     ): Promise<string> {
         try {
             const message = await this.client.messages.create({
-                model: "claude-sonnet-4-5-20250514",
+                model: "claude-sonnet-4-5",
                 max_tokens: options?.maxTokens ?? 400,
                 temperature: options?.temperature ?? 0.5,
                 system: systemPrompt,

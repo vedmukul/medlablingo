@@ -46,7 +46,7 @@ export function resolveProvider(): AIProvider | null {
 export function getModelInfo(provider: AIProvider): ModelInfo {
     switch (provider.name) {
         case "anthropic":
-            return { provider: "anthropic", modelName: "claude-sonnet-4-5-20250514", temperature: 0.3 };
+            return { provider: "anthropic", modelName: "claude-sonnet-4-5", temperature: 0.3 };
         case "gemini":
             return { provider: "google", modelName: "gemini-3-flash-preview", temperature: 0.3 };
         case "openai":
