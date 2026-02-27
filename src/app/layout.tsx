@@ -1,8 +1,17 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { DM_Sans, DM_Serif_Display } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const dmSans = DM_Sans({
+    subsets: ["latin"],
+    variable: "--font-dm-sans",
+});
+
+const dmSerif = DM_Serif_Display({
+    weight: "400",
+    subsets: ["latin"],
+    variable: "--font-dm-serif",
+});
 
 export const metadata: Metadata = {
     title: "MedLabLingo",
@@ -16,7 +25,9 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-            <body className={inter.className}>{children}</body>
+            <body className={`${dmSans.variable} ${dmSerif.variable} font-sans bg-sand text-navy`}>
+                {children}
+            </body>
         </html>
     );
 }

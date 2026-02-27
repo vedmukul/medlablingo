@@ -195,15 +195,15 @@ console.log("Testing safetyFilter()...\n");
 
     const output = safetyFilter(input);
     assert(
-        (output.summary as string).includes("[FILTERED]"),
+        (output as any).summary.includes("[FILTERED]"),
         "Top-level string should be filtered"
     );
     assert(
-        (output.sections[0].content as string).includes("[FILTERED]"),
+        (output as any).sections[0].content.includes("[FILTERED]"),
         "Nested string should be filtered"
     );
     assert(
-        output.meta.safety === DISCLAIMER,
+        (output as any).meta.safety === DISCLAIMER,
         "Meta.safety should be added"
     );
     console.log("✓ Nested object filtering works");
