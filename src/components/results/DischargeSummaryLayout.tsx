@@ -40,7 +40,7 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
             <WarningSigns signs={allWarnings} />
 
             {meds.length > 0 && (
-                <div className="pt-2 pb-4">
+                <div id="medications" className="scroll-mt-24 pt-2 pb-4">
                     <h3 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4 ml-1">Current Medications</h3>
                     <div className="space-y-4">
                         {meds.map((m: any, i: number) => (
@@ -69,16 +69,22 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
 
             <DiscontinuedMedsCard meds={stoppedMeds} />
 
-            <FollowUpAppointments appointments={followUp} />
+            <div id="appointments" className="scroll-mt-24">
+                <FollowUpAppointments appointments={followUp} />
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            <div id="diet-activity" className="scroll-mt-24 grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                 <DietCard diet={ds.dietInstructions} />
                 <ActivityCard activityRestrictions={ds.activityRestrictions} />
             </div>
 
-            <DailyMonitoring monitoring={ds.dailyMonitoring} />
+            <div id="monitoring" className="scroll-mt-24">
+                <DailyMonitoring monitoring={ds.dailyMonitoring} />
+            </div>
 
-            <GeneralInstructions sections={generalSections} />
+            <div id="home-care" className="scroll-mt-24">
+                <GeneralInstructions sections={generalSections} />
+            </div>
 
             <NeonatalSection
                 feedingPlan={ds.feedingPlan}
