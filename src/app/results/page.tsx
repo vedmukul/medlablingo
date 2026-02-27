@@ -225,7 +225,7 @@ export default function ResultsPage() {
                             )}
 
                             {/* Labs section */}
-                            {result.labsSection?.labs?.length > 0 && (
+                            {(result.labsSection?.labs?.length > 0 || result.labsSection?.overallLabNote) && (
                                 <section className="mb-8">
                                     <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4 ml-1">Key Findings</h2>
                                     {(t?.overallLabNote ?? result.labsSection.overallLabNote) && (
