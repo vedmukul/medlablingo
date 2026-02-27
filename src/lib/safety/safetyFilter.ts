@@ -116,10 +116,8 @@ function filterString(text: string): string {
         }
     }
 
-    // Append disclaimer if we filtered anything
-    if (hasUnsafeContent && !result.includes(SAFETY_DISCLAIMER)) {
-        result = result + " " + SAFETY_DISCLAIMER;
-    }
+    // We no longer append SAFETY_DISCLAIMER to individual strings to prevent mid-sentence UI breaking.
+    // The overarching disclaimer banner handles this requirement.
 
     return result;
 }

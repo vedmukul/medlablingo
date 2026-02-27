@@ -559,7 +559,14 @@ function postProcessResponse(
             homeCareSteps: coerceToStringArray(findByAlias(rawDC, ["homeCareSteps", "home_care_steps", "homeCare", "homeInstructions", "careInstructions"])),
             medications: findByAlias(rawDC, ["medications", "medication", "meds", "prescriptions"]) ?? [],
             followUp: coerceToStringArray(findByAlias(rawDC, ["followUp", "follow_up", "followUpInstructions", "followUpAppointments"])),
-            warningSignsFromDoc: coerceToStringArray(findByAlias(rawDC, ["warningSignsFromDoc", "warning_signs", "warningSignsFromDocument", "warningSigns", "redFlagsFromDoc"])),
+            warningSignsFromDoc: Array.isArray(findByAlias(rawDC, ["warningSignsFromDoc", "warning_signs", "warningSignsFromDocument", "warningSigns", "redFlagsFromDoc"]))
+                ? findByAlias(rawDC, ["warningSignsFromDoc", "warning_signs", "warningSignsFromDocument", "warningSigns", "redFlagsFromDoc"]).map((ws: any) => {
+                    if (!ws || typeof ws !== "object") return { symptom: coerceToString(ws), action: "Contact healthcare provider" };
+                    return {
+                        symptom: coerceToString(findByAlias(ws, ["symptom", "sign", "warning", "threshold"])) || "Unknown Warning",
+                        action: coerceToString(findByAlias(ws, ["action", "whatToDo", "instruction", "response"])) || "Contact healthcare provider",
+                    };
+                }) : [],
             generalRedFlags: coerceToStringArray(findByAlias(rawDC, ["generalRedFlags", "general_red_flags", "redFlags", "emergencySigns"])),
             diagnosesMentionedInDoc: coerceToStringArray(findByAlias(rawDC, ["diagnosesMentionedInDoc", "diagnoses", "diagnosis", "diagnosesMentioned", "conditions"])),
         };
@@ -742,7 +749,9 @@ EXTRACTION REQUIREMENTS BY SECTION (all fields populate the schema):
 
 3. DISCHARGE MEDICATIONS (dischargeSection.medications):
    - Extract EVERY medication, no exceptions. Include:
-     * Full name (brand and generic)
+     * name: The full medication name with both generic and brand names
+       Format: "Generic Name (Brand Name)" e.g., "Sacubitril/Valsartan (Entresto)"
+       NEVER return "Unknown Medication" or leave the name field empty.
      * Exact dosing from the document (dose, route, frequency)
      * Plain-language purpose ("This helps your heart pump better")
      * Timing relative to other medications ("Take metolazone 30 minutes BEFORE furosemide")
@@ -752,9 +761,9 @@ EXTRACTION REQUIREMENTS BY SECTION (all fields populate the schema):
 
 4. DISCONTINUED MEDICATIONS (discontinuedMedications):
    - If any medications were STOPPED, list each with:
-     * Name
-     * Plain-language reason why it was stopped
-     * What replaced it (if anything)
+     * name: The specific medication name (e.g., "Metformin"). NEVER "Unknown Medication".
+     * reasonPlain: The plain-language reason it was stopped. The source document ALWAYS states why medications were discontinued. Look for "contraindicated in...", "replaced by...", etc. NEVER return "No reason specified".
+     * replacedBy: Name of the replacement medication if applicable
    - This is safety-critical: patients need to know what they should NO LONGER take
 
 5. HOME CARE INSTRUCTIONS (dischargeSection.homeCareSteps):
@@ -773,6 +782,7 @@ EXTRACTION REQUIREMENTS BY SECTION (all fields populate the schema):
    - Extract EVERY daily self-monitoring task as an array of specific instructions
    - Include exact thresholds ("Call if weight increases >3 lbs in 24 hours")
    - Include timing ("Weigh every morning BEFORE breakfast, AFTER urinating")
+   - DEDUPLICATION: If an instruction like "weigh daily" belongs here, extract it HERE and do NOT repeat it in homeCareSteps. Use the most specific section.
 
 9. FEEDING PLAN (dischargeSection.feedingPlan) — for neonatal documents:
    - Extract exact volumes (mL), frequencies (times/day), caloric density (kcal/oz)
@@ -787,9 +797,10 @@ EXTRACTION REQUIREMENTS BY SECTION (all fields populate the schema):
     - Preserve any emphasis about premature infants being at HIGHER risk
 
 11. WARNING SIGNS (dischargeSection.warningSignsFromDoc):
-    - Extract EVERY warning sign with specific thresholds
+    - STRUCTURE AS AN OBJECT WITH TWO FIELDS:
+      * symptom: the sign or threshold (e.g., "Weight increase > 3 lbs in 24 hours")
+      * action: what to do (e.g., "Call the heart failure clinic")
     - Preserve exact numbers (temperature >100.4°F, breathing >60/min, etc.)
-    - Keep the action instruction (call pediatrician, go to ER)
 
 12. FOLLOW-UP APPOINTMENTS (dischargeSection.followUpStructured):
     - Extract ALL appointments with specialty, provider, date/time, purpose
@@ -798,9 +809,11 @@ EXTRACTION REQUIREMENTS BY SECTION (all fields populate the schema):
 
 13. IMAGING & PROCEDURES (imagingAndProcedures):
     - Extract each study/procedure with date, plain-language findings, and key measurements
+    - NEVER return generic names like "Unknown" or "Unknown Imaging". Extract the specific study name (e.g., "Transthoracic Echocardiogram (TTE)", "Chest X-Ray (CXR)", "Thoracentesis", "Right Heart Catheterization (Swan-Ganz)")
     - For echocardiograms: EF, valve findings, pressures
     - For X-rays: what they showed and how it changed
     - For procedures: what was done, how much fluid removed, results
+    - Date: Also extract the specific date or timing (e.g., "Admission", "Day 2", "Day 7", "Pre-discharge"). NEVER use [DOB REDACTED] or other redaction tokens as dates. If the date was redacted, use the relative timing instead ("Admission", "Day 7").
 
 14. IMMUNIZATIONS (immunizations) — especially for pediatric documents:
     - List all administered vaccines with dates
@@ -868,19 +881,23 @@ LAB EXTRACTION RULES — MANDATORY:
    - Anemia: Connect Hgb, Hct, RBC, MCV, MCH, MCHC, RDW, retic count
    - Liver: Connect AST, ALT, Alk Phos, bilirubin (total + direct), GGT
 
-5. SPECIFIC EXPLANATIONS: Never say "might be related to your condition."
+5. LAB FLAGS: Always compute the correct \`flag\` enum ("normal", "high", "low", "borderline").
+   - NEVER use "unknown" if you have both the measured value and the reference range.
+   - If a value is 150 and the range is 135-145, the flag is "high". Compute this objectively.
+
+6. SPECIFIC EXPLANATIONS: Never say "might be related to your condition."
    Always name the specific condition and explain the mechanism.
    - BAD: "Your high BUN might be related to your condition."
    - GOOD: "Your high BUN (48 mg/dL) reflects your kidneys' reduced ability to filter waste, 
      consistent with your Stage IV chronic kidney disease."
 
-6. MEDICATION CONNECTIONS: When a lab is monitored because of a specific medication,
+7. MEDICATION CONNECTIONS: When a lab is monitored because of a specific medication,
    say so:
    - "TSH is checked because amiodarone can affect thyroid function"
    - "Potassium is monitored closely because spironolactone can raise potassium levels"
    - "Liver enzymes are tracked because amiodarone and statins can both affect the liver"
 
-7. NEONATAL REFERENCE RANGES: For infant documents, always use age-appropriate ranges.
+8. NEONATAL REFERENCE RANGES: For infant documents, always use age-appropriate ranges.
    If a value would be abnormal in adults but normal in neonates, explicitly note this
    to prevent parental anxiety from Googling adult ranges.`;
 
@@ -891,10 +908,19 @@ REDACTION HANDLING:
 The input text contains [FILTERED] or [REDACTED] tokens where personal health information
 was removed before being sent to you. In ALL of your output text (summaries, explanations,
 takeaways, instructions), you must:
-- NEVER include [FILTERED] or [REDACTED] tokens in your output
-- Write around redacted information naturally
-- Example: Instead of "[FILTERED] several follow-up appointments", write "Several follow-up appointments are scheduled"
-- Example: Instead of "Patient [FILTERED] was admitted", write "The patient was admitted"
+1. NEVER include [FILTERED], [REDACTED], [DOB REDACTED], or any bracket-token in output
+2. Write around redacted information naturally:
+   BAD: "[FILTERED] severe heart failure..."
+   GOOD: "You have severe heart failure..."
+   BAD: "The type of anemia [FILTERED]"  
+   GOOD: "The type of anemia you have"
+   BAD: "[DOB REDACTED] — Intake"
+   GOOD: "Next day after discharge — Intake" (use relative timing)
+3. For dates that were redacted, substitute with relative timing:
+   - "Next day after discharge" instead of "[DOB REDACTED]"
+   - "2 weeks post-discharge" instead of specific redacted date
+4. If a sentence becomes meaningless after removing a redaction token,
+   rewrite the entire sentence rather than leaving a gap
 `;
 
     return redactionHandling + "CRITICAL INSTRUCTIONS:\n" +
@@ -1151,7 +1177,7 @@ function getMockAnalysisResult(
                     purpose: "Mock follow-up",
                     urgency: "routine"
                 }],
-                warningSignsFromDoc: ["Mock warning sign"],
+                warningSignsFromDoc: [{ symptom: "Fever > 100.4", action: "Call provider" }],
                 generalRedFlags: ["Severe chest pain", "Difficulty breathing", "Sudden confusion"],
                 diagnosesMentionedInDoc: ["Mock diagnosis"],
                 dietInstructions: "Mock diet instructions",

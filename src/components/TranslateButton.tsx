@@ -71,7 +71,12 @@ export function TranslateButton({ result, onTranslated, onReset, activeLanguage 
             const dc = result.dischargeSection;
             if (Array.isArray(dc.homeCareSteps)) texts.homeCareSteps = dc.homeCareSteps;
             if (Array.isArray(dc.followUp)) texts.followUp = dc.followUp;
-            if (Array.isArray(dc.warningSignsFromDoc)) texts.warningSignsFromDoc = dc.warningSignsFromDoc;
+            if (Array.isArray(dc.warningSignsFromDoc)) {
+                texts.warningSignsFromDoc = dc.warningSignsFromDoc.map((ws: any) => ({
+                    symptom: ws.symptom,
+                    action: ws.action,
+                }));
+            }
             if (Array.isArray(dc.generalRedFlags)) texts.generalRedFlags = dc.generalRedFlags;
             if (Array.isArray(dc.diagnosesMentionedInDoc)) texts.diagnosesMentionedInDoc = dc.diagnosesMentionedInDoc;
             if (Array.isArray(dc.medications)) {

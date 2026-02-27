@@ -72,7 +72,7 @@ function formatClinicianNote(data: AnalysisData): string {
         if (d?.status) lines.push(`Status: ${d.status}`);
         const homeCare: string[] = Array.isArray(d?.homeCareSteps) ? d.homeCareSteps : [];
         const followUp: string[] = Array.isArray(d?.followUp) ? d.followUp : [];
-        const warningSigns: string[] = Array.isArray(d?.warningSignsFromDoc) ? d.warningSignsFromDoc : [];
+        const warningSigns: { symptom: string, action: string }[] = Array.isArray(d?.warningSignsFromDoc) ? d.warningSignsFromDoc : [];
         const redFlags: string[] = Array.isArray(d?.generalRedFlags) ? d.generalRedFlags : [];
         if (homeCare.length) {
             lines.push("Home care steps:");
@@ -84,7 +84,7 @@ function formatClinicianNote(data: AnalysisData): string {
         }
         if (warningSigns.length) {
             lines.push("Warning signs (from doc):");
-            warningSigns.forEach((s) => lines.push(`- ${s}`));
+            warningSigns.forEach((s) => lines.push(`- ${s.symptom} -> ${s.action}`));
         }
         if (redFlags.length) {
             lines.push("General red flags:");
@@ -410,8 +410,11 @@ export default function ClinicianReviewPage() {
                                 <div className="p-3 rounded bg-yellow-50 border border-yellow-100">
                                     <div className="font-medium">Warning signs (from document)</div>
                                     <ul className="list-disc ml-5">
-                                        {discharge.warningSignsFromDoc.map((s: string, i: number) => (
-                                            <li key={i}>{s}</li>
+                                        {discharge.warningSignsFromDoc.map((s: { symptom: string, action: string }, i: number) => (
+                                            <li key={i}>
+                                                <span className="font-semibold">{s.symptom}</span> {" -> "}
+                                                <span>{s.action}</span>
+                                            </li>
                                         ))}
                                     </ul>
                                 </div>

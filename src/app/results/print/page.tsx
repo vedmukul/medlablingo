@@ -311,7 +311,10 @@ export default function PrintPage() {
                             </h2>
                             <ul className="list-disc ml-6 space-y-2 text-gray-800">
                                 {result.dischargeSection.warningSignsFromDoc.map((sign, index) => (
-                                    <li key={index}>{sign}</li>
+                                    <li key={index}>
+                                        <span className="font-semibold">{sign.symptom}</span> {" -> "}
+                                        <span className="text-red-700 font-medium">{sign.action}</span>
+                                    </li>
                                 ))}
                             </ul>
                         </section>

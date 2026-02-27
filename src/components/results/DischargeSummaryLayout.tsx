@@ -9,6 +9,7 @@ import { FollowUpAppointments } from './FollowUpAppointments';
 import { Immunizations } from './Immunizations';
 import { NeonatalSection } from './NeonatalSection';
 import { GeneralInstructions } from './GeneralInstructions';
+import { LabsTable } from '../LabsTable';
 
 export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) {
     const ds = result.dischargeSection || {};
@@ -86,7 +87,23 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                 birthHistory={result.birthHistory}
             />
 
-            <ImagingCard items={imaging} />
+            {/* Labs Section */}
+            {result.labsSection?.labs?.length > 0 && (
+                <div id="labs" className="scroll-mt-24 pt-2">
+                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4 ml-1">Key Findings</h3>
+                    <div className="mb-6">
+                        <LabsTable
+                            labs={result.labsSection.labs}
+                            overallNote={t?.overallLabNote ?? result.labsSection.overallLabNote}
+                            translatedLabs={t?.labExplanations}
+                        />
+                    </div>
+                </div>
+            )}
+
+            <div id="imaging" className="scroll-mt-24">
+                <ImagingCard items={imaging} />
+            </div>
 
             <Immunizations immunizations={result.immunizations} />
 

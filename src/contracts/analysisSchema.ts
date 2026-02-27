@@ -126,13 +126,18 @@ const MedicationSchema = z
     })
     .strict();
 
+const WarningSignSchema = z.object({
+    symptom: z.string(), // e.g., "Weight increase > 3 lbs in 24 hours"
+    action: z.string(),  // e.g., "Call the heart failure clinic"
+}).strict();
+
 const DischargeSectionSchema = z
     .object({
         status: DischargeStatusSchema,
         homeCareSteps: z.array(z.string()),
         medications: z.array(MedicationSchema),
         followUp: z.array(z.string()),
-        warningSignsFromDoc: z.array(z.string()),
+        warningSignsFromDoc: z.array(WarningSignSchema),
         generalRedFlags: z.array(z.string()),
         diagnosesMentionedInDoc: z.array(z.string()),
 

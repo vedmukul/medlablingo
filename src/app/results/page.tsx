@@ -8,7 +8,9 @@ import { SummaryCard } from "@/components/SummaryCard";
 import { AnalysisChat } from "@/components/AnalysisChat";
 import { TranslateButton } from "@/components/TranslateButton";
 import { DischargeSummaryLayout } from "@/components/results/DischargeSummaryLayout";
+import { LabsTable } from "@/components/LabsTable";
 import { clearAnalysis, loadAnalysis } from "@/lib/persistence/analysisStorage";
+import { isDischargeSummary } from "@/contracts/analysisSchema";
 
 export default function ResultsPage() {
     const [data, setData] = useState<ReturnType<typeof loadAnalysis>>(null);
@@ -192,10 +194,41 @@ export default function ResultsPage() {
                         </div>
                     </details>
 
+                    {/* Sticky Navigation for Discharge Summary */}
+                    {isDischargeSummary(result) && (
+                        <nav className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm py-3 px-4 flex gap-6 overflow-x-auto hide-scrollbar text-[13px] font-medium text-gray-600 w-full xl:px-8">
+                            <a href="#summary" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">Summary</a>
+                            {(t?.warningSignsFromDoc ?? result.dischargeSection?.warningSignsFromDoc)?.length > 0 && (
+                                <a href="#warning-signs" className="text-red-600 hover:text-red-700 whitespace-nowrap px-2 py-1 rounded-md hover:bg-red-50 transition-colors">⚠️ Warning Signs</a>
+                            )}
+                            {Array.isArray(result.dischargeSection?.medications) && result.dischargeSection.medications.length > 0 && (
+                                <a href="#medications" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">💊 Medications</a>
+                            )}
+                            {(t?.dailyMonitoring ?? result.dischargeSection?.dailyMonitoring)?.length > 0 && (
+                                <a href="#monitoring" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">📋 Daily Tasks</a>
+                            )}
+                            {((t?.dietInstructions ?? result.dischargeSection?.dietInstructions) || (t?.activityRestrictions ?? result.dischargeSection?.activityRestrictions)) && (
+                                <a href="#diet-activity" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">🍎 Diet & Activity</a>
+                            )}
+                            {(t?.homeCareSteps ?? result.dischargeSection?.homeCareSteps)?.length > 0 && (
+                                <a href="#home-care" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">🏠 Home Care</a>
+                            )}
+                            {Array.isArray(result.dischargeSection?.followUpStructured) && result.dischargeSection.followUpStructured.length > 0 && (
+                                <a href="#appointments" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">📅 Appointments</a>
+                            )}
+                            {Array.isArray(result.labsSection?.labs) && result.labsSection.labs.length > 0 && (
+                                <a href="#labs" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">🧪 Lab Results</a>
+                            )}
+                            {Array.isArray(result.imagingAndProcedures) && result.imagingAndProcedures.length > 0 && (
+                                <a href="#imaging" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">📷 Imaging</a>
+                            )}
+                        </nav>
+                    )}
+
                     {/* AI Summary */}
                     {result && (
                         <>
-                            <section className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm hover:shadow-md transition-shadow">
+                            <section id="summary" className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm hover:shadow-md transition-shadow">
                                 <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4">Summary</h2>
                                 <p className="text-[15px] leading-relaxed text-gray-800">{summary}</p>
 
@@ -211,6 +244,13 @@ export default function ResultsPage() {
                                 )}
                             </section>
 
+                            {/* 2. Warning Signs - MOVED UP */}
+                            {isDischargeSummary(result) && result.dischargeSection && (
+                                <section id="warning-signs" className="scroll-mt-24 mb-6">
+                                    <DischargeSummaryLayout result={result} t={t} />
+                                </section>
+                            )}
+
                             {questions.length > 0 && (
                                 <section className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm hover:shadow-md transition-shadow">
                                     <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4">Questions for your doctor</h2>
@@ -225,149 +265,84 @@ export default function ResultsPage() {
                                 </section>
                             )}
 
-                            {/* Labs section */}
-                            {(result.labsSection?.labs?.length > 0 || result.labsSection?.overallLabNote) && (
-                                <section className="mb-8">
+                            {/* Labs section (for non-discharge summary or legacy) */}
+                            {result.labsSection?.labs?.length > 0 && !isDischargeSummary(result) && (
+                                <section id="labs" className="mb-8 scroll-mt-24">
                                     <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4 ml-1">Key Findings</h2>
-                                    {(t?.overallLabNote ?? result.labsSection.overallLabNote) && (
-                                        <p className="text-[14px] text-gray-600 mb-5 ml-1">
-                                            {t?.overallLabNote ?? result.labsSection.overallLabNote}
-                                        </p>
-                                    )}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {result.labsSection.labs.map((lab: any, i: number) => {
-                                            const labT = Array.isArray(t?.labExplanations) ? t.labExplanations[i] : null;
-
-                                            // Determine status colors based on flag
-                                            let dotColor = "bg-sage";
-                                            let labelColor = "text-sage";
-                                            let label = "Normal";
-                                            if (lab.flag === "high" || lab.flag === "low") {
-                                                dotColor = lab.flag === "high" ? "bg-customRed" : "bg-amber";
-                                                labelColor = lab.flag === "high" ? "text-customRed" : "text-amber";
-                                                label = lab.flag === "high" ? "Above Range" : "Below Range";
-                                            }
-
-                                            // Determine badge color for trend interpretation
-                                            let trendBadgeColor = "bg-gray-100 text-gray-600";
-                                            if (lab.trendInterpretation === "Improving" || lab.trendInterpretation === "Resolved") trendBadgeColor = "bg-green-100 text-green-700";
-                                            else if (lab.trendInterpretation === "Worsening") trendBadgeColor = "bg-red-100 text-red-700";
-                                            else if (lab.trendInterpretation === "Stable") trendBadgeColor = "bg-blue-100 text-blue-700";
-
-                                            return (
-                                                <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-[0_4px_20px_rgba(26,39,68,0.06)] transition-all cursor-default flex flex-col h-full">
-                                                    <div className="flex justify-between items-start mb-3">
-                                                        <span className="font-medium text-[14px] text-gray-500 leading-tight pr-4">{labT?.name ?? lab.name}</span>
-                                                        <div className="text-right flex-shrink-0">
-                                                            <div className="text-[22px] font-serif text-navy leading-none">
-                                                                {lab.value} <span className="text-[12px] text-gray-400 font-sans tracking-normal ml-1">{lab.unit}</span>
-                                                            </div>
-                                                            {lab.trendInterpretation && lab.trendInterpretation !== "Unknown" && (
-                                                                <div className={`mt-2 inline-block px-2 text-[10px] font-bold uppercase tracking-wider rounded ${trendBadgeColor}`}>
-                                                                    {lab.trendInterpretation}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        <span className={`w-2 h-2 rounded-full ${dotColor}`}></span>
-                                                        <span className={`text-[12px] font-bold ${labelColor}`}>
-                                                            {lab.flag ? lab.flag.replace('_', ' ') : label}
-                                                        </span>
-                                                        {lab.referenceRange && (
-                                                            <span className="text-[12px] text-gray-400 ml-1">Normal: {lab.referenceRange}</span>
-                                                        )}
-                                                    </div>
-                                                    <p className="text-[14px] leading-relaxed text-gray-600 pt-3 flex-grow border-t border-gray-100">{labT?.explanation ?? lab.explanation}</p>
-
-                                                    {lab.trend && lab.trend.length > 1 && (
-                                                        <div className="mt-4 pt-3 border-t border-dashed border-gray-200">
-                                                            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2">History ({lab.trend.length} records)</p>
-                                                            <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide">
-                                                                {lab.trend.map((tPt: any, tIdx: number) => (
-                                                                    <div key={tIdx} className="flex-shrink-0 bg-sand/30 rounded px-2 py-1 border border-gray-100">
-                                                                        <div className="text-[10px] text-gray-400">{tPt.date}</div>
-                                                                        <div className="text-[13px] font-medium text-navy">{tPt.value}</div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                                    <LabsTable
+                                        labs={result.labsSection.labs}
+                                        overallNote={t?.overallLabNote ?? result.labsSection.overallLabNote}
+                                        translatedLabs={t?.labExplanations}
+                                    />
                                 </section>
                             )}
 
                             {/* Discharge section */}
-                            {result.dischargeSection && (
-                                documentType === "discharge_summary" ? (
-                                    <DischargeSummaryLayout result={result} t={t} />
-                                ) : (
-                                    <section className="border rounded-lg p-4 space-y-4">
-                                        <h2 className="font-medium">Discharge Details</h2>
+                            {result.dischargeSection && documentType !== "discharge_summary" && (
+                                <section className="border rounded-lg p-4 space-y-4">
+                                    <h2 className="font-medium">Discharge Details</h2>
 
-                                        {(t?.medications ?? result.dischargeSection.medications)?.length > 0 && (
-                                            <div className="pb-2">
-                                                <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-3">Medications</h3>
-                                                <div className="space-y-3">
-                                                    {(t?.medications ?? result.dischargeSection.medications).map((m: any, i: number) => (
-                                                        <div key={i} className="bg-white border-l-4 border-navy rounded-r-lg shadow-sm p-4 flex flex-col gap-2">
-                                                            <span className="font-serif text-lg text-navy leading-tight">{m.name}</span>
-                                                            <p className="text-sm text-gray-700">{m.purposePlain}</p>
-                                                            {(m.howToTakeFromDoc || m.timing) && (
-                                                                <div className="text-gray-700 bg-sand/30 p-3 mt-1 rounded text-sm border border-sand">
-                                                                    {m.timing && <span className="font-semibold text-navy block mb-1">⏱ {m.timing}</span>}
-                                                                    <span>{m.howToTakeFromDoc}</span>
-                                                                </div>
-                                                            )}
-                                                            {m.cautionsGeneral && (
-                                                                <div className="flex gap-2 items-start text-amber-700 bg-amber-50 p-2 rounded text-xs mt-1">
-                                                                    <span className="shrink-0">⚠️</span>
-                                                                    <p className="leading-snug">{m.cautionsGeneral}</p>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                    {(t?.medications ?? result.dischargeSection.medications)?.length > 0 && (
+                                        <div className="pb-2">
+                                            <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-3">Medications</h3>
+                                            <div className="space-y-3">
+                                                {(t?.medications ?? result.dischargeSection.medications).map((m: any, i: number) => (
+                                                    <div key={i} className="bg-white border-l-4 border-navy rounded-r-lg shadow-sm p-4 flex flex-col gap-2">
+                                                        <span className="font-serif text-lg text-navy leading-tight">{m.name}</span>
+                                                        <p className="text-sm text-gray-700">{m.purposePlain}</p>
+                                                        {(m.howToTakeFromDoc || m.timing) && (
+                                                            <div className="text-gray-700 bg-sand/30 p-3 mt-1 rounded text-sm border border-sand">
+                                                                {m.timing && <span className="font-semibold text-navy block mb-1">⏱ {m.timing}</span>}
+                                                                <span>{m.howToTakeFromDoc}</span>
+                                                            </div>
+                                                        )}
+                                                        {m.cautionsGeneral && (
+                                                            <div className="flex gap-2 items-start text-amber-700 bg-amber-50 p-2 rounded text-xs mt-1">
+                                                                <span className="shrink-0">⚠️</span>
+                                                                <p className="leading-snug">{m.cautionsGeneral}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
                                             </div>
-                                        )}
+                                        </div>
+                                    )}
 
-                                        {(t?.homeCareSteps ?? result.dischargeSection.homeCareSteps)?.length > 0 && (
-                                            <div>
-                                                <h3 className="text-sm font-medium text-gray-700 mb-1">Home Care</h3>
-                                                <ul className="list-disc ml-5 text-sm">
-                                                    {(t?.homeCareSteps ?? result.dischargeSection.homeCareSteps).map((s: string, i: number) => (
-                                                        <li key={i}>{s}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
+                                    {(t?.homeCareSteps ?? result.dischargeSection.homeCareSteps)?.length > 0 && (
+                                        <div>
+                                            <h3 className="text-sm font-medium text-gray-700 mb-1">Home Care</h3>
+                                            <ul className="list-disc ml-5 text-sm">
+                                                {(t?.homeCareSteps ?? result.dischargeSection.homeCareSteps).map((s: string, i: number) => (
+                                                    <li key={i}>{s}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
 
-                                        {(t?.followUp ?? result.dischargeSection.followUp)?.length > 0 && (
-                                            <div>
-                                                <h3 className="text-sm font-medium text-gray-700 mb-1">Follow Up</h3>
-                                                <ul className="list-disc ml-5 text-sm">
-                                                    {(t?.followUp ?? result.dischargeSection.followUp).map((s: string, i: number) => (
-                                                        <li key={i}>{s}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
+                                    {(t?.followUp ?? result.dischargeSection.followUp)?.length > 0 && (
+                                        <div>
+                                            <h3 className="text-sm font-medium text-gray-700 mb-1">Follow Up</h3>
+                                            <ul className="list-disc ml-5 text-sm">
+                                                {(t?.followUp ?? result.dischargeSection.followUp).map((s: string, i: number) => (
+                                                    <li key={i}>{s}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
 
-                                        {(t?.warningSignsFromDoc ?? result.dischargeSection.warningSignsFromDoc)?.length > 0 && (
-                                            <div>
-                                                <h3 className="text-sm font-medium text-red-700 mb-1">Warning Signs</h3>
-                                                <ul className="list-disc ml-5 text-sm text-red-800">
-                                                    {(t?.warningSignsFromDoc ?? result.dischargeSection.warningSignsFromDoc).map((s: string, i: number) => (
-                                                        <li key={i}>{s}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-                                    </section>
-                                )
+                                    {(t?.warningSignsFromDoc ?? result.dischargeSection.warningSignsFromDoc)?.length > 0 && (
+                                        <div>
+                                            <h3 className="text-sm font-medium text-red-700 mb-1">Warning Signs</h3>
+                                            <ul className="list-disc ml-5 text-sm text-red-800">
+                                                {(t?.warningSignsFromDoc ?? result.dischargeSection.warningSignsFromDoc).map((s: { symptom: string, action: string }, i: number) => (
+                                                    <li key={i}>
+                                                        <span className="font-semibold">{s.symptom}</span> {" -> "} {s.action}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </section>
                             )}
                         </>
                     )}

@@ -13,6 +13,8 @@ interface LabItem {
 
 interface LabsTableProps {
     labs: LabItem[];
+    overallNote?: string | null;
+    translatedLabs?: Record<string, any>[] | null;
 }
 
 type Severity = 'critical' | 'warning' | 'normal';
@@ -33,7 +35,7 @@ interface HistoricalLab {
     timestamp: string;
 }
 
-export function LabsTable({ labs }: LabsTableProps) {
+export function LabsTable({ labs, overallNote, translatedLabs }: LabsTableProps) {
     const [trends, setTrends] = useState<Map<string, TrendInfo>>(new Map());
 
     useEffect(() => {
@@ -334,7 +336,14 @@ export function LabsTable({ labs }: LabsTableProps) {
 
     return (
         <div className="space-y-4">
+            {overallNote && (
+                <p className="text-[14px] text-gray-600 mb-5 ml-1">
+                    {overallNote}
+                </p>
+            )}
+
             {labs.map((lab, index) => {
+                const labT = Array.isArray(translatedLabs) ? translatedLabs[index] : null;
                 const severity = getSeverity(lab);
                 const styles = getSeverityStyles(severity);
                 const severityBadge = getSeverityBadge(lab, severity);
@@ -349,7 +358,7 @@ export function LabsTable({ labs }: LabsTableProps) {
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <h4 className="font-medium text-gray-900">
-                                        {lab.name}
+                                        {labT?.name ?? lab.name}
                                     </h4>
                                     {severityBadge}
                                     {getImportanceBadge(lab.importance)}
@@ -402,7 +411,7 @@ export function LabsTable({ labs }: LabsTableProps) {
 
                         <p className="text-sm text-gray-700 bg-blue-50 p-3 rounded border border-blue-100">
                             <span className="font-medium text-blue-900">What this means: </span>
-                            {lab.explanation}
+                            {labT?.explanation ?? lab.explanation}
                         </p>
                     </div>
                 );
