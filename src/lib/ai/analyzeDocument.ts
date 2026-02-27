@@ -264,6 +264,15 @@ function coerceToStringArray(value: any): string[] {
 }
 
 /**
+ * Helper to coerce an optional scalar value into a string if it exists.
+ */
+function coerceOptionalString(value: any): string | undefined {
+    if (value === null || value === undefined) return undefined;
+    const str = coerceToString(value).trim();
+    return str.length > 0 ? str : undefined;
+}
+
+/**
  * Normalizes a string value to one of the allowed enum values, or returns fallback.
  */
 function normalizeEnum(value: any, allowed: readonly string[], fallback: string): string {
@@ -525,6 +534,15 @@ function postProcessResponse(
                             "unknown"
                         ),
                         explanation,
+                        trend: Array.isArray(lab.trend) ? lab.trend.map((t: any) => ({
+                            date: String(findByAlias(t, ["date", "timepoint", "time"]) ?? "Unknown Date"),
+                            value: String(findByAlias(t, ["value", "result"]) ?? "N/A")
+                        })) : undefined,
+                        trendInterpretation: normalizeEnum(
+                            findByAlias(lab, ["trendInterpretation", "trend_interpretation", "trendString"]),
+                            ["Improving", "Worsening", "Stable", "Resolved", "Unknown"],
+                            "Unknown"
+                        ),
                         ...(typeof lab.confidenceScore === "number" ? { confidenceScore: lab.confidenceScore } : {}),
                     };
                 })
@@ -538,41 +556,97 @@ function postProcessResponse(
 
         result.dischargeSection = {
             status: (rawDC.status === "approved" ? "approved" : "draft") as "draft" | "approved",
-            homeCareSteps: findByAlias(rawDC, ["homeCareSteps", "home_care_steps", "homeCare", "homeInstructions", "careInstructions"]) ?? [],
+            homeCareSteps: coerceToStringArray(findByAlias(rawDC, ["homeCareSteps", "home_care_steps", "homeCare", "homeInstructions", "careInstructions"])),
             medications: findByAlias(rawDC, ["medications", "medication", "meds", "prescriptions"]) ?? [],
-            followUp: findByAlias(rawDC, ["followUp", "follow_up", "followUpInstructions", "followUpAppointments"]) ?? [],
-            warningSignsFromDoc: findByAlias(rawDC, ["warningSignsFromDoc", "warning_signs", "warningSignsFromDocument", "warningSigns", "redFlagsFromDoc"]) ?? [],
-            generalRedFlags: findByAlias(rawDC, ["generalRedFlags", "general_red_flags", "redFlags", "emergencySigns"]) ?? [],
-            diagnosesMentionedInDoc: findByAlias(rawDC, ["diagnosesMentionedInDoc", "diagnoses", "diagnosis", "diagnosesMentioned", "conditions"]) ?? [],
+            followUp: coerceToStringArray(findByAlias(rawDC, ["followUp", "follow_up", "followUpInstructions", "followUpAppointments"])),
+            warningSignsFromDoc: coerceToStringArray(findByAlias(rawDC, ["warningSignsFromDoc", "warning_signs", "warningSignsFromDocument", "warningSigns", "redFlagsFromDoc"])),
+            generalRedFlags: coerceToStringArray(findByAlias(rawDC, ["generalRedFlags", "general_red_flags", "redFlags", "emergencySigns"])),
+            diagnosesMentionedInDoc: coerceToStringArray(findByAlias(rawDC, ["diagnosesMentionedInDoc", "diagnoses", "diagnosis", "diagnosesMentioned", "conditions"])),
         };
 
         if (knownDocumentType === "discharge_summary") {
-            result.dischargeSection.dietInstructions = findByAlias(rawDC, ["dietInstructions", "diet_instructions", "diet"]) ?? [];
-            result.dischargeSection.activityRestrictions = findByAlias(rawDC, ["activityRestrictions", "activity_restrictions", "activity"]) ?? [];
-            result.dischargeSection.dailyMonitoring = findByAlias(rawDC, ["dailyMonitoring", "daily_monitoring", "monitoring"]) ?? [];
+            const followUpStructured = findByAlias(rawDC, ["followUpStructured", "follow_up_structured", "appointments"]);
+            if (Array.isArray(followUpStructured)) {
+                result.dischargeSection.followUpStructured = followUpStructured.map((f: any) => {
+                    if (!f || typeof f !== "object") return f;
+                    return {
+                        specialty: coerceToString(findByAlias(f, ["specialty", "department", "clinic"])) || "Unknown",
+                        provider: coerceOptionalString(findByAlias(f, ["provider", "doctor", "physician", "name"])),
+                        dateTime: coerceToString(findByAlias(f, ["dateTime", "date_time", "date", "time", "when"])) || "Unknown",
+                        purpose: coerceToString(findByAlias(f, ["purpose", "reason", "why"])) || "Follow-up",
+                        urgency: normalizeEnum(findByAlias(f, ["urgency", "priority"]), ["routine", "important", "critical"], "routine"),
+                    };
+                });
+            }
+
+            result.dischargeSection.dietInstructions = coerceOptionalString(findByAlias(rawDC, ["dietInstructions", "diet_instructions", "diet"]));
+            result.dischargeSection.activityRestrictions = coerceOptionalString(findByAlias(rawDC, ["activityRestrictions", "activity_restrictions", "activity"]));
+            result.dischargeSection.dailyMonitoring = coerceToStringArray(findByAlias(rawDC, ["dailyMonitoring", "daily_monitoring", "monitoring"]));
+            result.dischargeSection.feedingPlan = coerceOptionalString(findByAlias(rawDC, ["feedingPlan", "feeding_plan", "feeding"]));
+            result.dischargeSection.safeSleepInstructions = coerceOptionalString(findByAlias(rawDC, ["safeSleepInstructions", "safe_sleep_instructions", "safeSleep", "sleep"]));
+            result.dischargeSection.woundCare = coerceOptionalString(findByAlias(rawDC, ["woundCare", "wound_care", "incisionCare"]));
+            result.dischargeSection.respiratoryPrecautions = coerceOptionalString(findByAlias(rawDC, ["respiratoryPrecautions", "respiratory_precautions"]));
+            result.dischargeSection.developmentalGuidance = coerceOptionalString(findByAlias(rawDC, ["developmentalGuidance", "developmental_guidance"]));
         }
 
         if (Array.isArray(result.dischargeSection.medications)) {
-            const MED_KEYS = [
-                "name", "purposePlain", "howToTakeFromDoc", "cautionsGeneral", "timing"
-            ] as const;
-            result.dischargeSection.medications = result.dischargeSection.medications.map(
-                (med: any) =>
-                    med && typeof med === "object" ? pick(med, MED_KEYS) : med
-            );
+            result.dischargeSection.medications = result.dischargeSection.medications.map((med: any) => {
+                if (!med || typeof med !== "object") return med;
+                return {
+                    name: coerceToString(findByAlias(med, ["name", "medication", "drug", "med"])) || "Unknown Medication",
+                    purposePlain: coerceToString(findByAlias(med, ["purposePlain", "purpose", "reason", "indication", "why"])) || "",
+                    howToTakeFromDoc: coerceToString(findByAlias(med, ["howToTakeFromDoc", "howToTake", "instructions", "directions", "dosage"])) || "",
+                    cautionsGeneral: coerceToString(findByAlias(med, ["cautionsGeneral", "cautions", "warnings", "sideEffects", "notes"])) || "",
+                    timing: coerceOptionalString(findByAlias(med, ["timing", "whenToTake", "schedule", "frequency"])),
+                };
+            });
         }
     }
 
     if (knownDocumentType === "discharge_summary") {
         const rawImaging = findByAlias(raw, ["imagingAndProcedures", "imaging_and_procedures", "imaging", "procedures"]);
         if (Array.isArray(rawImaging)) {
-            result.imagingAndProcedures = rawImaging.map((i: any) => i && typeof i === "object" ? pick(i, ["name", "date", "findings", "keyMeasurements"]) : i);
+            result.imagingAndProcedures = rawImaging.map((i: any) => {
+                if (!i || typeof i !== "object") return i;
+                return {
+                    name: coerceToString(findByAlias(i, ["name", "procedure", "test"])) || "Unknown Imaging",
+                    date: coerceOptionalString(findByAlias(i, ["date", "time", "performed"])),
+                    findingsPlain: coerceToString(findByAlias(i, ["findingsPlain", "findings", "results", "conclusion", "summary"])) || "No findings detailed.",
+                    ...(Array.isArray(i.keyValues) ? { keyValues: i.keyValues } : {}),
+                    ...(typeof i.confidenceScore === "number" ? { confidenceScore: i.confidenceScore } : {}),
+                };
+            });
         }
 
         const rawDiscMeds = findByAlias(raw, ["discontinuedMedications", "discontinued_medications", "stoppedMedications", "stoppedMeds"]);
         if (Array.isArray(rawDiscMeds)) {
-            result.discontinuedMedications = rawDiscMeds.map((m: any) => m && typeof m === "object" ? pick(m, ["name", "reason", "replacedBy"]) : m);
+            result.discontinuedMedications = rawDiscMeds.map((m: any) => {
+                if (!m || typeof m !== "object") return m;
+                return {
+                    name: coerceToString(findByAlias(m, ["name", "medication", "drug"])) || "Unknown Medication",
+                    reasonPlain: coerceToString(findByAlias(m, ["reasonPlain", "reason", "why", "cause"])) || "No reason specified.",
+                    replacedBy: coerceOptionalString(findByAlias(m, ["replacedBy", "replacement", "switchedTo"])),
+                };
+            });
         }
+
+        const rawImmunizations = findByAlias(raw, ["immunizations", "vaccines", "vaccinations", "shotRecord"]);
+        if (Array.isArray(rawImmunizations)) {
+            result.immunizations = rawImmunizations.map((i: any) => {
+                if (!i || typeof i !== "object") return i;
+                return {
+                    name: coerceToString(findByAlias(i, ["name", "vaccine", "shot"])) || "Unknown Immunization",
+                    date: coerceToString(findByAlias(i, ["date", "given", "administered"])) || "Unknown Date",
+                    notes: coerceOptionalString(findByAlias(i, ["notes", "details", "comment"])),
+                };
+            });
+        }
+
+        const rawBirthHistory = findByAlias(raw, ["birthHistory", "birth_history"]);
+        if (typeof rawBirthHistory === "string") result.birthHistory = rawBirthHistory;
+
+        const rawHospitalCourse = findByAlias(raw, ["hospitalCourse", "hospital_course", "course"]);
+        if (typeof rawHospitalCourse === "string") result.hospitalCourse = rawHospitalCourse;
     }
 
     // ── 7. Guarantee the required section exists ──
@@ -607,84 +681,253 @@ function postProcessResponse(
  * Builds the system prompt based on document type and reading level
  * Now includes guidance on confidence scoring
  */
-function buildSystemPrompt(
+export function buildSystemPrompt(
     documentType: "lab_report" | "discharge_instructions" | "discharge_summary",
     readingLevel: "simple" | "standard"
 ): string {
     const readingLevelGuidance =
         readingLevel === "simple"
-            ? "Use plain, everyday language suitable for a 6th-8th grade reading level. Avoid medical jargon."
-            : "Use clear, professional language suitable for an educated general audience. Define technical terms when used.";
+            ? "Use 5th-grade plain English. Avoid all medical jargon. Explain concepts using simple everyday analogies.\n"
+            : "Use clear, standard clinical English. Explain complex medical terms briefly when first used. Keep tone professional but accessible.\n";
 
-    return `You are an expert medical AI assistant. Your specific job is to help patients understand the contents of their medical documents by translating complex clinical jargon into plain, patient-friendly language. You are educational ONLY.
+    let optLabText = "";
+    if (documentType === "lab_report") {
+        optLabText = "- labsSection: analysis of lab results (REQUIRED). Do NOT include dischargeSection at all.\n";
+    } else if (documentType === "discharge_instructions") {
+        optLabText = "- dischargeSection: discharge instructions breakdown (REQUIRED). Do NOT include labsSection at all.\n";
+    } else {
+        optLabText = `When documentType is "discharge_summary":
 
-CRITICAL INSTRUCTIONS:
-1. Your PRIMARY GOAL is to simplify and explain the document's contents.
-2. DO NOT refuse to summarize the document. Explaining medical terminology and lab results DOES NOT constitute medical advice.
-3. DO NOT insert safety disclaimers or tell the patient "Please consult your doctor to understand this" in your summaries. Our application UI handles all medical disclaimers automatically. Just provide the educational explanation.
-4. Never diagnose conditions, recommend treatments, or suggest medication changes.
+You are analyzing a comprehensive medical discharge summary. These documents are hybrid —
+they contain BOTH clinical data (lab results, imaging, procedures) AND patient instructions
+(medications, home care, follow-up, warning signs). You MUST extract EVERYTHING from BOTH sides.
 
-Your role is strictly to help patients understand what their documents say and prepare questions for their doctors.
+═══════════════════════════════════════════════════════════════
+ABSOLUTE RULE: EXTRACT EVERYTHING. DO NOT SUMMARIZE OR TRUNCATE.
+═══════════════════════════════════════════════════════════════
 
-DOCUMENT TYPE: ${documentType}
-READING LEVEL: ${readingLevel}
-STYLE GUIDANCE: ${readingLevelGuidance}
+If the document lists 15 medications, return ALL 15 with full details.
+If there are 8 follow-up appointments, return ALL 8.
+If there are 50 lab values, return ALL 50 — including normal results.
+This is the patient's instruction manual for going home. Every detail is safety-critical.
 
-CONFIDENCE SCORING GUIDELINES:
-- Include optional confidence scores (0.0 to 1.0) where appropriate
-- Base confidence on:
-  * Document clarity: Is the information clearly stated?
-  * Explicitness: Is the information directly stated or inferred?
-  * Completeness: Is all necessary context present?
-- ONLY include confidence scores when you have a reasonable basis for the score
-- If unsure about confidence, OMIT the confidence field entirely (do not guess or hallucinate)
-- Confidence scores help users understand which information is more certain vs. inferred
+EXTRACTION REQUIREMENTS BY SECTION (all fields populate the schema):
 
-OUTPUT FORMAT:
-- Respond with ONLY valid JSON
-- Do NOT include markdown code fences (\`\`\`json)
-- Do NOT include any explanatory text before or after the JSON
-- The JSON must exactly match the required schema for ${documentType}
-- Include modelInfo will be added automatically (do not include it)
+1. PATIENT SUMMARY (patientSummary):
+   - overallSummary: 3-5 sentence plain-language overview of why they were hospitalized, 
+     what happened, and how they are at discharge
+   - keyTakeaways: 3-7 bullet points covering the most important things the patient/family 
+     needs to understand. For NICU documents, address PARENTS ("your baby"), not the patient.
 
-REQUIRED FIELDS:
-- meta: metadata about the analysis (schemaVersion: "1.0.0", createdAt, documentType, readingLevel, language, provenance, safety)
-- patientSummary: overall summary and key takeaways (3-7 items)
-- questionsForDoctor: 5-10 questions the patient should ask their doctor
-- whatWeCouldNotDetermine: things we couldn't interpret from the document
-${documentType === "lab_report"
-            ? "- labsSection: analysis of lab results (REQUIRED). Do NOT include dischargeSection at all."
-            : documentType === "discharge_instructions"
-                ? "- dischargeSection: discharge instructions breakdown (REQUIRED). Do NOT include labsSection at all."
-                : `- labsSection: (OPTIONAL) If lab results are present, extract ALL labs with values, units, reference ranges, flags, and plain-language explanations. Include serial/trending values when available (use the most recent value as the primary, note trends in the explanation).
-- dischargeSection: (REQUIRED) Extract:
-    - status: "approved"
-    - homeCareSteps: ALL home care instructions (diet, activity, wound care, daily monitoring tasks). Be comprehensive — extract EVERY instruction, not just a summary.
-    - medications: ALL discharge medications with name, plain-language purpose, dosing instructions exactly as written, and cautions/warnings. Include timing relative to other medications (e.g., "Take metolazone 30 minutes BEFORE furosemide"). Do NOT skip any medications.
-    - followUp: ALL follow-up appointments with specialty, provider, date/time, and purpose
-    - warningSignsFromDoc: Warning signs explicitly mentioned in the document
-    - generalRedFlags: General emergency red flags
-    - diagnosesMentionedInDoc: ALL diagnoses listed (primary + secondary/comorbid)
-    - dietInstructions: Specific diet instructions if present (sodium restriction, fluid limit, calorie target, etc.)
-    - activityRestrictions: Activity limitations and exercise guidance
-    - dailyMonitoring: Daily self-monitoring tasks (weight, blood sugar, wound checks, etc.)
-- imagingAndProcedures: (OPTIONAL) If imaging studies or procedures are described, extract each one with:
-    - name, date, plain-language findings, key measurements with interpretation
-- discontinuedMedications: (OPTIONAL) If medications were stopped/discontinued, list each with the reason in plain language and what replaced it (if anything)
+2. LAB RESULTS (labsSection):
+   - Extract EVERY lab value from the document, including:
+     * Normal results (patients need reassurance and completeness)
+     * Abnormal results with context-specific explanations
+     * Screening tests (NBS, ABR) — use the qualitative result as the "value"
+   - For serial/trending values (same test at multiple timepoints):
+     * Use the MOST RECENT value as the primary value
+     * In the explanation, state all available values with dates/timepoints
+       (e.g., "Your BNP was 4,280 at admission, decreased to 3,120 on day 3, 
+       1,840 on day 5, and 980 at discharge — showing steady improvement")
+     * Characterize the trend: "improving", "worsening", "stable", or "resolved"
+   - For each lab explanation:
+     * Connect to the patient's SPECIFIC diagnoses, not generic definitions
+     * Mention related medications when relevant (e.g., "TSH is monitored because 
+       amiodarone can affect thyroid function")
+     * Cross-reference related labs (e.g., "Low iron, low TSAT, and high TIBC together 
+       confirm iron deficiency")
+     * Never use vague language like "might be related to your condition" — name the condition
+   - Use NEONATAL reference ranges for infant documents, and explicitly note when a value 
+     would be abnormal in adults but is normal in neonates
 
-EXTRACTION PRIORITY FOR DISCHARGE SUMMARIES:
-1. Medications (most actionable for patients)
-2. Follow-up appointments (time-sensitive)
-3. Warning signs / red flags (safety-critical)
-4. Home care instructions (daily actions)
-5. Lab results (understanding health status)
-6. Diagnoses (context)
-7. Imaging/procedures (supporting information)
-8. Discontinued medications (awareness)
+3. DISCHARGE MEDICATIONS (dischargeSection.medications):
+   - Extract EVERY medication, no exceptions. Include:
+     * Full name (brand and generic)
+     * Exact dosing from the document (dose, route, frequency)
+     * Plain-language purpose ("This helps your heart pump better")
+     * Timing relative to other medications ("Take metolazone 30 minutes BEFORE furosemide")
+     * Specific cautions and what to watch for
+   - For supplements (Vitamin D, iron, multivitamins), include the exact product name and 
+     when to start if delayed
 
-COMPLETENESS RULE: Discharge summaries are the patient's "instruction manual" for going home. Extract EVERYTHING. If the document lists 15 medications, return all 15. If there are 8 follow-up appointments, return all 8. Do not summarize or truncate — patients need every detail.`}
+4. DISCONTINUED MEDICATIONS (discontinuedMedications):
+   - If any medications were STOPPED, list each with:
+     * Name
+     * Plain-language reason why it was stopped
+     * What replaced it (if anything)
+   - This is safety-critical: patients need to know what they should NO LONGER take
 
-Remember: Educational only, not medical advice. Always include safety disclaimers.`;
+5. HOME CARE INSTRUCTIONS (dischargeSection.homeCareSteps):
+   - Extract EVERY instruction: diet, activity, wound care, monitoring tasks, restrictions
+   - Preserve specific numbers (sodium grams, fluid limits, calorie targets, weight thresholds)
+   - Include WHEN to call the doctor for each instruction where applicable
+
+6. DIET INSTRUCTIONS (dischargeSection.dietInstructions):
+   - Extract ALL dietary restrictions and targets as a single comprehensive string
+   - Include: sodium limit, fluid restriction, calorie target, special diet type, supplements
+
+7. ACTIVITY RESTRICTIONS (dischargeSection.activityRestrictions):
+   - Include lifting limits, exercise guidance, cardiac rehab referrals, return-to-work timelines
+
+8. DAILY MONITORING (dischargeSection.dailyMonitoring):
+   - Extract EVERY daily self-monitoring task as an array of specific instructions
+   - Include exact thresholds ("Call if weight increases >3 lbs in 24 hours")
+   - Include timing ("Weigh every morning BEFORE breakfast, AFTER urinating")
+
+9. FEEDING PLAN (dischargeSection.feedingPlan) — for neonatal documents:
+   - Extract exact volumes (mL), frequencies (times/day), caloric density (kcal/oz)
+   - Include formula name and preparation
+   - Include output expectations (wet diapers, stools per day)
+   - Include weight gain targets (g/day)
+   - Include alert thresholds ("Contact pediatrician if feeding <6 times in 24 hours")
+
+10. SAFE SLEEP INSTRUCTIONS (dischargeSection.safeSleepInstructions) — for neonatal:
+    - Extract COMPLETELY. This is SIDS prevention and is life-safety content.
+    - Include: position, mattress, what NOT to put in crib, room-sharing guidance
+    - Preserve any emphasis about premature infants being at HIGHER risk
+
+11. WARNING SIGNS (dischargeSection.warningSignsFromDoc):
+    - Extract EVERY warning sign with specific thresholds
+    - Preserve exact numbers (temperature >100.4°F, breathing >60/min, etc.)
+    - Keep the action instruction (call pediatrician, go to ER)
+
+12. FOLLOW-UP APPOINTMENTS (dischargeSection.followUpStructured):
+    - Extract ALL appointments with specialty, provider, date/time, purpose
+    - If the document marks any as urgent/critical ("do NOT miss"), set urgency to "critical"
+    - Include recurring appointments (weekly weight checks, monthly injections)
+
+13. IMAGING & PROCEDURES (imagingAndProcedures):
+    - Extract each study/procedure with date, plain-language findings, and key measurements
+    - For echocardiograms: EF, valve findings, pressures
+    - For X-rays: what they showed and how it changed
+    - For procedures: what was done, how much fluid removed, results
+
+14. IMMUNIZATIONS (immunizations) — especially for pediatric documents:
+    - List all administered vaccines with dates
+    - Include upcoming schedule
+    - For specialty vaccines (Palivizumab/Synagis), include weight-based dosing and schedule
+
+15. WOUND CARE (dischargeSection.woundCare):
+    - Extract dressing type, change frequency, cleaning instructions
+    - Include signs of infection to watch for
+
+16. RESPIRATORY PRECAUTIONS (dischargeSection.respiratoryPrecautions):
+    - Hand hygiene requirements, crowd avoidance, smoke exposure, visitor restrictions
+
+17. DEVELOPMENTAL GUIDANCE (dischargeSection.developmentalGuidance):
+    - Corrected vs chronological age explanation
+    - Early intervention referrals
+    - PT/OT evaluation timelines
+
+18. DIAGNOSES (dischargeSection.diagnosesMentionedInDoc):
+    - List ALL diagnoses: principal, secondary, comorbid, historical
+    - Include staging/grading where provided (CKD Stage IV, ROP Stage 2 Zone II, etc.)
+
+19. QUESTIONS FOR DOCTOR (questionsForDoctor):
+    - Generate 5-10 questions specific to THIS patient's conditions
+    - Reference specific values, medications, and findings from the document
+    - For pediatric documents, frame questions for parents
+
+20. WHAT WE COULD NOT DETERMINE (whatWeCouldNotDetermine):
+    - List anything that was unclear, incomplete, or potentially redacted
+    - Be specific about what's missing and why it matters
+
+AUDIENCE DETECTION:
+- If the document is a NICU/pediatric discharge, address PARENTS ("your baby") throughout
+- If the document is an adult discharge, address the PATIENT ("you/your")
+- If unclear, default to patient-directed language
+
+CONFIDENCE SCORING:
+- Include confidence scores (0.0-1.0) for all AI-generated content
+- Higher confidence for information directly stated in the document
+- Lower confidence for inferred or interpreted information
+- Omit confidence score if you cannot reasonably assess it
+
+LAB EXTRACTION RULES — MANDATORY:
+
+1. INCLUDE ALL LABS. Every single lab value in the document must appear in your output.
+   Normal results are NOT optional — they provide reassurance and clinical context.
+
+2. NEVER SKIP NORMAL RESULTS. A normal TSH matters when the patient is on amiodarone.
+   A normal procalcitonin matters when the patient had suspected sepsis. A normal
+   platelet count matters when the patient is on anticoagulants. Context determines
+   importance, not just the flag.
+
+3. SERIAL VALUES: When the same test appears at multiple timepoints:
+   - Primary value = most recent (discharge) value
+   - Explanation MUST include ALL timepoints with dates
+   - State the trend direction explicitly
+   - Example: "Your BNP decreased steadily during your stay: 4,280 (admission) -> 3,120 
+     (day 3) -> 1,840 (day 5) -> 980 (discharge). This improving trend indicates your 
+     heart failure treatment is working, though the level remains elevated."
+
+4. CROSS-REFERENCE RELATED LABS in explanations:
+   - Iron studies: Connect iron, TIBC, TSAT, ferritin together
+   - Kidney panel: Connect BUN, creatinine, eGFR, phosphorus, uric acid
+   - Nutrition: Connect albumin, pre-albumin, total protein
+   - Anemia: Connect Hgb, Hct, RBC, MCV, MCH, MCHC, RDW, retic count
+   - Liver: Connect AST, ALT, Alk Phos, bilirubin (total + direct), GGT
+
+5. SPECIFIC EXPLANATIONS: Never say "might be related to your condition."
+   Always name the specific condition and explain the mechanism.
+   - BAD: "Your high BUN might be related to your condition."
+   - GOOD: "Your high BUN (48 mg/dL) reflects your kidneys' reduced ability to filter waste, 
+     consistent with your Stage IV chronic kidney disease."
+
+6. MEDICATION CONNECTIONS: When a lab is monitored because of a specific medication,
+   say so:
+   - "TSH is checked because amiodarone can affect thyroid function"
+   - "Potassium is monitored closely because spironolactone can raise potassium levels"
+   - "Liver enzymes are tracked because amiodarone and statins can both affect the liver"
+
+7. NEONATAL REFERENCE RANGES: For infant documents, always use age-appropriate ranges.
+   If a value would be abnormal in adults but normal in neonates, explicitly note this
+   to prevent parental anxiety from Googling adult ranges.`;
+
+    }
+
+    const redactionHandling = `
+REDACTION HANDLING:
+The input text contains [FILTERED] or [REDACTED] tokens where personal health information
+was removed before being sent to you. In ALL of your output text (summaries, explanations,
+takeaways, instructions), you must:
+- NEVER include [FILTERED] or [REDACTED] tokens in your output
+- Write around redacted information naturally
+- Example: Instead of "[FILTERED] several follow-up appointments", write "Several follow-up appointments are scheduled"
+- Example: Instead of "Patient [FILTERED] was admitted", write "The patient was admitted"
+`;
+
+    return redactionHandling + "CRITICAL INSTRUCTIONS:\n" +
+        "1. Your PRIMARY GOAL is to simplify and explain the document's contents.\n" +
+        "2. DO NOT refuse to summarize the document. Explaining medical terminology and lab results DOES NOT constitute medical advice.\n" +
+        "3. DO NOT insert safety disclaimers or tell the patient \"Please consult your doctor to understand this\" in your summaries. Our application UI handles all medical disclaimers automatically. Just provide the educational explanation.\n" +
+        "4. Never diagnose conditions, recommend treatments, or suggest medication changes.\n\n" +
+        "Your role is strictly to help patients understand what their documents say and prepare questions for their doctors.\n\n" +
+        "DOCUMENT TYPE: " + documentType + "\n" +
+        "READING LEVEL: " + readingLevel + "\n" +
+        "STYLE GUIDANCE: " + readingLevelGuidance + "\n\n" +
+        "CONFIDENCE SCORING GUIDELINES:\n" +
+        "- Include optional confidence scores (0.0 to 1.0) where appropriate\n" +
+        "- Base confidence on:\n" +
+        "  * Document clarity: Is the information clearly stated?\n" +
+        "  * Explicitness: Is the information directly stated or inferred?\n" +
+        "  * Completeness: Is all necessary context present?\n" +
+        "- ONLY include confidence scores when you have a reasonable basis for the score\n" +
+        "- If unsure about confidence, OMIT the confidence field entirely (do not guess or hallucinate)\n" +
+        "- Confidence scores help users understand which information is more certain vs. inferred\n\n" +
+        "OUTPUT FORMAT:\n" +
+        "- Respond with ONLY valid JSON\n" +
+        "- Do NOT include markdown code fences (```json)\n" +
+        "- Do NOT include any explanatory text before or after the JSON\n" +
+        "- The JSON must exactly match the required schema for " + documentType + "\n" +
+        "- Include modelInfo will be added automatically (do not include it)\n\n" +
+        "REQUIRED FIELDS:\n" +
+        "- meta: metadata about the analysis (schemaVersion: \"1.0.0\", createdAt, documentType, readingLevel, language, provenance, safety)\n" +
+        "- patientSummary: overall summary and key takeaways (3-7 items)\n" +
+        "- questionsForDoctor: 5-10 questions the patient should ask their doctor\n" +
+        "- whatWeCouldNotDetermine: things we couldn't interpret from the document\n" +
+        optLabText + "\n" +
+        "Remember: Educational only, not medical advice. Always include safety disclaimers.";
 }
 
 /**
@@ -694,19 +937,40 @@ function buildUserPrompt(
     redactedText: string,
     documentType: "lab_report" | "discharge_instructions" | "discharge_summary"
 ): string {
-    return `Analyze this ${documentType.replace("_", " ")} and provide educational insights to help the patient understand it and prepare for their doctor visit.
+    const docTypeStr = documentType.replace("_", " ");
+    const includeStr = documentType === "lab_report"
+        ? "Include labsSection. Do NOT include dischargeSection."
+        : documentType === "discharge_instructions"
+            ? "Include dischargeSection. Do NOT include labsSection."
+            : `Include dischargeSection. Labs, imaging, and discontinued meds are optional.
 
-Document text:
-${redactedText}
+CRITICAL COMPLETENESS CHECK before returning your response:
+□ Did I include ALL lab values from every table (even normal ones)?
+□ Did I include ALL medications listed in the discharge medications section?
+□ Did I include ALL follow-up appointments?
+□ Did I include ALL warning signs with specific thresholds?
+□ Did I include ALL home care instructions (diet, activity, monitoring, wound care)?
+□ Did I extract imaging/procedure findings if present?
+□ Did I list discontinued medications with reasons if present?
+□ Did I include immunization records if present?
+□ Did I include feeding plan details if this is a neonatal document?
+□ Did I include safe sleep instructions if this is a neonatal document?
+□ Are any [FILTERED] or [REDACTED] tokens in my output? (They should NOT be)
+□ Did I use specific language instead of vague phrases?
 
-Remember:
-1. Output ONLY valid JSON (no markdown, no extra text)
-2. Match the exact schema for ${documentType}
-3. ${documentType === "lab_report" ? "Include labsSection. Do NOT include dischargeSection." : documentType === "discharge_instructions" ? "Include dischargeSection. Do NOT include labsSection." : "Include dischargeSection. Labs, imaging, and discontinued meds are optional."}
-4. Focus strictly on explaining and simplifying the text. Do not provide medical advice.
-5. DO NOT refuse to explain the document. DO NOT add disclaimers telling the user to consult their doctor for an explanation; provide the explanation yourself.
-6. Add confidence scores (0.0-1.0) where you have reasonable certainty based on document clarity and explicitness
-7. If unsure about a confidence value, omit it rather than guessing`;
+If any checkbox fails, go back and fix it before responding.`;
+
+    return "Analyze this " + docTypeStr + " and provide educational insights to help the patient understand it and prepare for their doctor visit.\n\n" +
+        "Document text:\n" +
+        redactedText + "\n\n" +
+        "Remember:\n" +
+        "1. Output ONLY valid JSON (no markdown, no extra text)\n" +
+        "2. Match the exact schema for " + documentType + "\n" +
+        "3. " + includeStr + "\n" +
+        "4. Focus strictly on explaining and simplifying the text. Do not provide medical advice.\n" +
+        "5. DO NOT refuse to explain the document. DO NOT add disclaimers telling the user to consult their doctor for an explanation; provide the explanation yourself.\n" +
+        "6. Add confidence scores (0.0-1.0) where you have reasonable certainty based on document clarity and explicitness\n" +
+        "7. If unsure about a confidence value, omit it rather than guessing";
 }
 
 /**
@@ -721,21 +985,17 @@ function buildRetryPrompt(
     const issues = validationError.issues ?? validationError.errors ?? [];
     const errorSummary = issues
         .slice(0, 5)
-        .map((e: any) => `- ${(e.path ?? []).join(".")}: ${e.message}`)
+        .map((e: any) => "- " + (e.path ?? []).join(".") + ": " + e.message)
         .join("\n");
 
-    return `Your previous response had validation errors. Please fix them and output ONLY the corrected JSON.
-
-Document text:
-${redactedText}
-
-Previous response (INVALID):
-${previousResponse}
-
-Validation errors:
-${errorSummary}
-
-Output the FIXED JSON now (no markdown, no explanation, just the JSON):`;
+    return "Your previous response had validation errors. Please fix them and output ONLY the corrected JSON.\n\n" +
+        "Document text:\n" +
+        redactedText + "\n\n" +
+        "Previous response (INVALID):\n" +
+        previousResponse + "\n\n" +
+        "Validation errors:\n" +
+        errorSummary + "\n\n" +
+        "Output the FIXED JSON now (no markdown, no explanation, just the JSON):";
 }
 
 /**
@@ -792,9 +1052,136 @@ function getMockAnalysisResult(
             labsSection: {
                 overallLabNote:
                     "Mock lab analysis - configure API key for real results",
-                labs: [],
+                labs: [
+                    {
+                        name: "Sodium",
+                        value: "135",
+                        unit: "mEq/L",
+                        referenceRange: "135-145",
+                        flag: "low",
+                        importance: "medium",
+                        explanation:
+                            "Mock explanation: Your sodium is slightly low. This could be due to medications like diuretics.",
+                        trend: [
+                            { date: "2023-10-01", value: "142" },
+                            { date: "2023-11-15", value: "138" },
+                            { date: "2023-12-05", value: "135" },
+                        ],
+                        trendInterpretation: "Worsening",
+                    },
+                    {
+                        name: "Potassium",
+                        value: "4.2",
+                        unit: "mEq/L",
+                        referenceRange: "3.5-5.0",
+                        flag: "normal",
+                        importance: "low",
+                        explanation:
+                            "Mock explanation: Your potassium is normal. The medication seems to be keeping it stable.",
+                        trend: [
+                            { date: "2023-10-01", value: "3.2" },
+                            { date: "2023-11-15", value: "3.8" },
+                            { date: "2023-12-05", value: "4.2" },
+                        ],
+                        trendInterpretation: "Improving",
+                    },
+                ],
             },
             dischargeSection: undefined,
+        };
+    } else if (documentType === "discharge_summary") {
+        return {
+            meta: {
+                ...baseMeta,
+                documentType: "discharge_summary" as const,
+            },
+            patientSummary: {
+                overallSummary:
+                    "Mock analysis: This is sample data returned when no API key is configured.",
+                keyTakeaways: [
+                    "This is mock data for testing",
+                    "Configure ANTHROPIC_API_KEY, GOOGLE_AI_API_KEY, or OPENAI_API_KEY for real analysis",
+                    "All values are placeholders",
+                ],
+            },
+            questionsForDoctor: [
+                "What signs should I watch for at home?",
+                "When do I need to follow up?",
+                "Are these medications necessary?",
+                "What activities should I avoid?",
+                "When can I return to normal activities?",
+            ],
+            whatWeCouldNotDetermine: [
+                "Real analysis pending API key configuration",
+            ],
+            labsSection: {
+                overallLabNote: "Mock lab analysis",
+                labs: [
+                    {
+                        name: "Sodium",
+                        value: "135",
+                        unit: "mEq/L",
+                        referenceRange: "135-145",
+                        flag: "low",
+                        importance: "medium",
+                        explanation: "Mock explanation: Your sodium is slightly low.",
+                        trend: [
+                            { date: "2023-12-01", value: "132" },
+                            { date: "2023-12-05", value: "135" },
+                        ],
+                        trendInterpretation: "Improving",
+                    }
+                ]
+            },
+            dischargeSection: {
+                status: "draft" as const,
+                homeCareSteps: ["Mock home care instruction"],
+                medications: [{
+                    name: "Mock Medication",
+                    purposePlain: "Mock purpose",
+                    howToTakeFromDoc: "Take 1 pill daily",
+                    timing: "Morning",
+                    cautionsGeneral: "Mock caution"
+                }],
+                followUp: ["Mock follow-up instruction"],
+                followUpStructured: [{
+                    specialty: "Primary Care",
+                    provider: "Dr. Mock",
+                    dateTime: "Next Tuesday 10am",
+                    purpose: "Mock follow-up",
+                    urgency: "routine"
+                }],
+                warningSignsFromDoc: ["Mock warning sign"],
+                generalRedFlags: ["Severe chest pain", "Difficulty breathing", "Sudden confusion"],
+                diagnosesMentionedInDoc: ["Mock diagnosis"],
+                dietInstructions: "Mock diet instructions",
+                activityRestrictions: "Mock activity restrictions",
+                dailyMonitoring: ["Mock monitoring task"],
+                feedingPlan: "Mock feeding plan",
+                safeSleepInstructions: "Mock safe sleep instructions",
+                woundCare: "Mock wound care",
+                respiratoryPrecautions: "Mock respiratory precautions",
+                developmentalGuidance: "Mock developmental guidance",
+            },
+            imagingAndProcedures: [{
+                name: "Mock Imaging",
+                date: "Mock Date",
+                findingsPlain: "Mock findings",
+                keyValues: [{ label: "Mock key", value: "Mock value", interpretation: "Mock interpretation" }],
+                confidenceScore: 0.9,
+            }],
+            discontinuedMedications: [{
+                name: "Mock Discontinued",
+                reasonPlain: "Mock reason",
+                replacedBy: "Mock replacement",
+            }],
+            immunizations: [{
+                name: "Mock Immunization",
+                date: "Mock Date",
+                notes: "Mock notes",
+            }],
+            birthHistory: "Mock birth history",
+            hospitalCourse: "Mock hospital course",
         };
     } else {
         return {

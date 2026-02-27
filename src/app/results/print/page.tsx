@@ -8,6 +8,7 @@ import {
     AnalysisResult,
     isLabReport,
     isDischargeInstructions,
+    isDischargeSummary,
 } from "@/contracts/analysisSchema";
 
 export default function PrintPage() {
@@ -203,7 +204,7 @@ export default function PrintPage() {
             )}
 
             {/* Discharge Instructions Section */}
-            {isDischargeInstructions(result) && result.dischargeSection && (
+            {(isDischargeInstructions(result) || isDischargeSummary(result)) && result.dischargeSection && (
                 <div className="space-y-8">
                     {/* Home Care Steps */}
                     {result.dischargeSection.homeCareSteps && result.dischargeSection.homeCareSteps.length > 0 && (
@@ -229,9 +230,12 @@ export default function PrintPage() {
                             <div className="space-y-4">
                                 {result.dischargeSection.medications.map((med, index) => (
                                     <div key={index} className="border border-gray-300 rounded p-4">
-                                        <h3 className="font-bold text-lg text-gray-900 mb-2">
-                                            {med.name}
-                                        </h3>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="font-bold text-lg text-gray-900">
+                                                {med.name}
+                                            </h3>
+                                            {med.timing && <span className="bg-gray-100 px-2 py-1 text-xs font-bold rounded">⏱ {med.timing}</span>}
+                                        </div>
                                         <div className="space-y-2 text-sm">
                                             <p>
                                                 <span className="font-medium">Purpose:</span> {med.purposePlain}
@@ -260,6 +264,42 @@ export default function PrintPage() {
                                     <li key={index}>{item}</li>
                                 ))}
                             </ul>
+                        </section>
+                    )}
+
+                    {/* Diet & Activity */}
+                    {(result.dischargeSection.dietInstructions || result.dischargeSection.activityRestrictions) && (
+                        <section>
+                            <h2 className="text-2xl font-bold text-gray-900 mb-4">Diet & Activity</h2>
+                            <div className="grid grid-cols-2 gap-4">
+                                {result.dischargeSection.dietInstructions && (
+                                    <div className="border p-4 rounded bg-gray-50">
+                                        <h3 className="font-bold mb-2">Diet</h3>
+                                        <p className="text-sm">{result.dischargeSection.dietInstructions}</p>
+                                    </div>
+                                )}
+                                {result.dischargeSection.activityRestrictions && (
+                                    <div className="border p-4 rounded bg-gray-50">
+                                        <h3 className="font-bold mb-2">Activity</h3>
+                                        <p className="text-sm whitespace-pre-line">{result.dischargeSection.activityRestrictions}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+                    )}
+
+                    {/* Imaging and Extra Data for Discharge Summaries */}
+                    {(result as any).imagingAndProcedures && (result as any).imagingAndProcedures.length > 0 && (
+                        <section>
+                            <h2 className="text-2xl font-bold text-gray-900 mb-4">Imaging & Procedures</h2>
+                            <div className="space-y-4">
+                                {(result as any).imagingAndProcedures.map((item: any, idx: number) => (
+                                    <div key={idx} className="border p-4 rounded">
+                                        <h3 className="font-bold text-lg mb-1">{item.name} {item.date && <span className="text-sm font-normal text-gray-500">({item.date})</span>}</h3>
+                                        <p className="text-sm text-gray-800 mb-2">{item.findingsPlain || item.findings}</p>
+                                    </div>
+                                ))}
+                            </div>
                         </section>
                     )}
 

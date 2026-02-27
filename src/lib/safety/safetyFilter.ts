@@ -86,6 +86,14 @@ function containsUnsafePhrase(text: string): boolean {
     return UNSAFE_PATTERNS.some(({ pattern }) => pattern.test(text));
 }
 
+function cleanRedactionArtifacts(text: string): string {
+    return text
+        .replace(/\[FILTERED\]/gi, '')
+        .replace(/\[REDACTED\]/gi, '')
+        .replace(/\s{2,}/g, ' ') // collapse double spaces left behind
+        .trim();
+}
+
 /**
  * Filter unsafe phrases from a string, replacing with safe disclaimer.
  */
@@ -94,7 +102,7 @@ function filterString(text: string): string {
         return text;
     }
 
-    let result = text;
+    let result = cleanRedactionArtifacts(text);
     let hasUnsafeContent = false;
 
     for (const { pattern } of UNSAFE_PATTERNS) {

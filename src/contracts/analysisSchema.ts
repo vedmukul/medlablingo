@@ -35,7 +35,7 @@ const ConfidenceScoreSchema = z.number().min(0).max(1).optional();
 
 const MetaSchema = z
     .object({
-        schemaVersion: z.enum(["1.0.0", "1.1.0"]), // Accept both for backward compatibility
+        schemaVersion: z.enum(["1.0.0", "1.1.0", "1.2.0"]), // Accept both for backward compatibility
         createdAt: z.string().datetime(), // ISO 8601 string
         documentType: DocumentTypeSchema,
         readingLevel: ReadingLevelSchema,
@@ -93,6 +93,11 @@ const LabItemSchema = z
         referenceRange: z.string().nullable(),
         flag: LabFlagSchema,
         importance: LabImportanceSchema,
+        trend: z.array(z.object({
+            date: z.string(),
+            value: z.string()
+        })).optional(),
+        trendInterpretation: z.enum(["Improving", "Worsening", "Stable", "Resolved", "Unknown"]).optional(),
         explanation: z.string(),
         confidenceScore: ConfidenceScoreSchema,
     })
@@ -130,30 +135,57 @@ const DischargeSectionSchema = z
         warningSignsFromDoc: z.array(z.string()),
         generalRedFlags: z.array(z.string()),
         diagnosesMentionedInDoc: z.array(z.string()),
+
+        // ── NEW FIELDS (all optional for backward compatibility) ──
+        followUpStructured: z.array(z.lazy(() => FollowUpAppointmentSchema)).optional(),
+        dietInstructions: z.string().optional(),
+        activityRestrictions: z.string().optional(),
+        dailyMonitoring: z.array(z.string()).optional(),
+        feedingPlan: z.string().optional(),
+        safeSleepInstructions: z.string().optional(),
+        woundCare: z.string().optional(),
+        respiratoryPrecautions: z.string().optional(),
+        developmentalGuidance: z.string().optional(),
     })
     .strict();
 
-const ImagingProcedureSchema = z
-    .object({
-        name: z.string(),
-        date: z.string().optional(),
-        findings: z.string(),
-        keyMeasurements: z.string().optional(),
-    })
-    .strict();
+// ── Imaging & Procedures ──────────────────────────────────
+const ImagingKeyValueSchema = z.object({
+    label: z.string(),              // e.g., "Ejection Fraction", "PA Pressure"
+    value: z.string(),              // e.g., "22%", "62/30 mmHg"
+    interpretation: z.string(),     // e.g., "Severely reduced heart pumping ability"
+}).strict();
 
-const DiscontinuedMedicationSchema = z
-    .object({
-        name: z.string(),
-        reason: z.string(),
-        replacedBy: z.string().optional(),
-    })
-    .strict();
+const ImagingItemSchema = z.object({
+    name: z.string(),               // e.g., "Transthoracic Echocardiogram (TTE)"
+    date: z.string().optional(),    // e.g., "01/15/2025"
+    findingsPlain: z.string(),      // Full plain-language explanation
+    keyValues: z.array(ImagingKeyValueSchema).optional(),
+    confidenceScore: ConfidenceScoreSchema,
+}).strict();
 
-const DischargeSummarySectionSchema = DischargeSectionSchema.extend({
-    dietInstructions: z.array(z.string()).optional(),
-    activityRestrictions: z.array(z.string()).optional(),
-    dailyMonitoring: z.array(z.string()).optional(),
+// ── Discontinued Medications ──────────────────────────────
+const DiscontinuedMedicationSchema = z.object({
+    name: z.string(),               // e.g., "Metformin"
+    reasonPlain: z.string(),        // e.g., "Stopped because kidney function too low for safe use"
+    replacedBy: z.string().optional(), // e.g., "Empagliflozin (Jardiance)"
+}).strict();
+
+// ── Immunization Records ──────────────────────────────────
+const ImmunizationSchema = z.object({
+    name: z.string(),               // e.g., "DTaP/IPV/Hib (Pentacel) #1"
+    date: z.string(),               // e.g., "01/18/2025"
+    notes: z.string().optional(),   // e.g., "2 months chronological age"
+}).strict();
+
+// ── Follow-Up Appointments ────────────────────────────────
+const FollowUpAppointmentSchema = z.object({
+    specialty: z.string(),          // e.g., "Pediatric Ophthalmology"
+    provider: z.string().optional(),// e.g., "Dr. R. Sanchez"
+    dateTime: z.string(),           // e.g., "02/11/2025 @ 1:30 PM"
+    purpose: z.string(),            // e.g., "ROP follow-up screening"
+    urgency: z.enum(["routine", "important", "critical"]).optional(),
+    // "critical" = document explicitly flags as must-not-miss
 }).strict();
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -201,10 +233,13 @@ const DischargeSummaryAnalysisSchema = BaseAnalysisSchema.extend({
     meta: MetaSchema.extend({
         documentType: z.literal("discharge_summary"),
     }).strict(),
-    labsSection: LabsSectionSchema.optional(),
-    dischargeSection: DischargeSummarySectionSchema,
-    imagingAndProcedures: z.array(ImagingProcedureSchema).optional(),
+    labsSection: LabsSectionSchema.optional(),              // OPTIONAL (may or may not have labs)
+    dischargeSection: DischargeSectionSchema.optional(),     // OPTIONAL (may or may not have d/c instructions)
+    imagingAndProcedures: z.array(ImagingItemSchema).optional(),
     discontinuedMedications: z.array(DiscontinuedMedicationSchema).optional(),
+    immunizations: z.array(ImmunizationSchema).optional(),
+    birthHistory: z.string().optional(),                    // Plain-language birth narrative (for NICU)
+    hospitalCourse: z.string().optional(),                  // Brief plain-language course summary
 }).strict();
 
 /**
@@ -315,7 +350,9 @@ export {
     LabImportanceSchema,
     DischargeStatusSchema,
     ConfidenceScoreSchema,
-    ImagingProcedureSchema,
+    ImagingItemSchema,
+    ImagingKeyValueSchema,
     DiscontinuedMedicationSchema,
-    DischargeSummarySectionSchema,
+    ImmunizationSchema,
+    FollowUpAppointmentSchema,
 };

@@ -24,7 +24,7 @@ function UploadForm() {
     const searchParams = useSearchParams();
 
     const [file, setFile] = useState<File | null>(null);
-    const [documentType, setDocumentType] = useState("lab_report");
+    const [documentType, setDocumentType] = useState("discharge_summary");
     const [readingLevel, setReadingLevel] = useState("standard");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -298,27 +298,26 @@ function UploadForm() {
                 )}
 
                 <div>
-                    <label
-                        htmlFor="documentType"
-                        className="block text-sm font-medium text-gray-700"
-                    >
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                         Document Type
                     </label>
-                    <select
-                        id="documentType"
-                        name="documentType"
-                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                        value={documentType}
-                        onChange={(e) => setDocumentType(e.target.value)}
-                    >
-                        <option value="lab_report">Lab Report</option>
-                        <option value="discharge_instructions">
-                            Discharge Instructions
-                        </option>
-                        <option value="discharge_summary">
-                            Discharge Summary
-                        </option>
-                    </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <label className={`cursor-pointer rounded-lg border p-3 flex flex-col items-center text-center transition-colors ${documentType === 'lab_report' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'}`}>
+                            <input type="radio" name="documentType" value="lab_report" checked={documentType === 'lab_report'} onChange={(e) => setDocumentType(e.target.value)} className="sr-only" />
+                            <span className="font-medium text-sm">Lab Report</span>
+                            <span className="text-xs mt-1 opacity-70">Blood work, pathology</span>
+                        </label>
+                        <label className={`cursor-pointer rounded-lg border p-3 flex flex-col items-center text-center transition-colors ${documentType === 'discharge_instructions' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'}`}>
+                            <input type="radio" name="documentType" value="discharge_instructions" checked={documentType === 'discharge_instructions'} onChange={(e) => setDocumentType(e.target.value)} className="sr-only" />
+                            <span className="font-medium text-sm">Basic Instructions</span>
+                            <span className="text-xs mt-1 opacity-70">Simple home steps</span>
+                        </label>
+                        <label className={`cursor-pointer rounded-lg border p-3 flex flex-col items-center text-center transition-colors ${documentType === 'discharge_summary' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'}`}>
+                            <input type="radio" name="documentType" value="discharge_summary" checked={documentType === 'discharge_summary'} onChange={(e) => setDocumentType(e.target.value)} className="sr-only" />
+                            <span className="font-medium text-sm">Discharge Summary</span>
+                            <span className="text-xs mt-1 opacity-70">Full hospital records</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div>

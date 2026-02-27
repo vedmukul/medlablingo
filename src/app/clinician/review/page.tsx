@@ -66,7 +66,7 @@ function formatClinicianNote(data: AnalysisData): string {
         lines.push("");
     }
 
-    if (docType === "discharge_instructions") {
+    if (docType === "discharge_instructions" || docType === "discharge_summary") {
         const d = r?.dischargeSection ?? {};
         lines.push("Discharge Section (model-generated):");
         if (d?.status) lines.push(`Status: ${d.status}`);
@@ -89,6 +89,13 @@ function formatClinicianNote(data: AnalysisData): string {
         if (redFlags.length) {
             lines.push("General red flags:");
             redFlags.forEach((s) => lines.push(`- ${s}`));
+        }
+        if (docType === "discharge_summary") {
+            const imaging: any[] = Array.isArray(r?.imagingAndProcedures) ? r.imagingAndProcedures : [];
+            if (imaging.length) {
+                lines.push("Imaging & Procedures:");
+                imaging.forEach((i) => lines.push(`- ${i.name}: ${i.findingsPlain || i.findings}`));
+            }
         }
         lines.push("");
     }
@@ -364,10 +371,10 @@ export default function ClinicianReviewPage() {
                 </section>
             )}
 
-            {/* Conditional: Discharge instructions */}
-            {docType === "discharge_instructions" && (
+            {/* Conditional: Discharge instructions / summary */}
+            {(docType === "discharge_instructions" || docType === "discharge_summary") && (
                 <section className="border rounded-lg p-4 space-y-3">
-                    <h2 className="font-medium">Discharge instructions</h2>
+                    <h2 className="font-medium">Discharge details ({docType})</h2>
 
                     {!discharge ? (
                         <div className="text-sm text-gray-500">No dischargeSection present.</div>
@@ -416,6 +423,17 @@ export default function ClinicianReviewPage() {
                                     <ul className="list-disc ml-5">
                                         {discharge.generalRedFlags.map((s: string, i: number) => (
                                             <li key={i}>{s}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {Array.isArray((result as any)?.imagingAndProcedures) && (result as any).imagingAndProcedures.length > 0 && (
+                                <div className="p-3 rounded bg-blue-50 border border-blue-100">
+                                    <div className="font-medium">Imaging & Procedures</div>
+                                    <ul className="list-disc ml-5">
+                                        {(result as any).imagingAndProcedures.map((s: any, i: number) => (
+                                            <li key={i}>{s.name}: {s.findingsPlain || s.findings}</li>
                                         ))}
                                     </ul>
                                 </div>
