@@ -236,6 +236,34 @@ function findByAlias(obj: any, aliases: readonly string[], fallback?: any): any 
 }
 
 /**
+ * Coerces a value to a string. Handles the common LLM pattern of returning
+ * nested objects like {text: "...", confidence: 0.9} instead of plain strings.
+ */
+function coerceToString(value: any): string {
+    if (typeof value === "string") return value;
+    if (value && typeof value === "object") {
+        const candidate = value.text ?? value.summary ?? value.content ??
+            value.description ?? value.value ?? value.explanation ?? value.message;
+        if (typeof candidate === "string") return candidate;
+        const strings = Object.values(value).filter(v => typeof v === "string");
+        if (strings.length > 0) return strings.join(" ");
+    }
+    if (value != null) return String(value);
+    return "";
+}
+
+/**
+ * Coerces an array (possibly of objects) into a string[].
+ * Handles LLMs returning [{text: "..."}, ...] instead of ["..."].
+ */
+function coerceToStringArray(value: any): string[] {
+    if (!Array.isArray(value)) return [];
+    return value
+        .map((item: any) => coerceToString(item))
+        .filter((s: string) => s.length > 0);
+}
+
+/**
  * Normalizes a string value to one of the allowed enum values, or returns fallback.
  */
 function normalizeEnum(value: any, allowed: readonly string[], fallback: string): string {
@@ -303,14 +331,13 @@ function postProcessResponse(
     ]);
 
     // Rebuild top-level with normalized names
-    raw.questionsForDoctor = Array.isArray(questionsForDoctor)
-        ? questionsForDoctor.filter((s: unknown) => typeof s === "string")
+    const coercedQuestions = coerceToStringArray(questionsForDoctor);
+    raw.questionsForDoctor = coercedQuestions.length > 0
+        ? coercedQuestions
         : ["What do these results mean for my health?", "Are any values concerning?",
             "Do I need follow-up tests?", "Should I make any lifestyle changes?",
             "When should I have my next checkup?"];
-    raw.whatWeCouldNotDetermine = Array.isArray(whatWeCouldNotDetermine)
-        ? whatWeCouldNotDetermine.filter((s: unknown) => typeof s === "string")
-        : [];
+    raw.whatWeCouldNotDetermine = coerceToStringArray(whatWeCouldNotDetermine);
 
     // Ensure questionsForDoctor has 5-10 items
     while (raw.questionsForDoctor.length < 5) {
@@ -373,25 +400,60 @@ function postProcessResponse(
     };
 
     // ── 4. Patient Summary (normalize field names then pick) ──
-    if (result.patientSummary && typeof result.patientSummary === "object") {
-        const rawPS = result.patientSummary;
+    // Gemini sometimes returns patientSummary as an array of strings instead of
+    // the expected {overallSummary, keyTakeaways} object. Detect and handle.
+    let rawPS: any = result.patientSummary;
 
-        const overallSummary = findByAlias(rawPS, [
+    if (Array.isArray(rawPS)) {
+        console.log("[analyzeDocument] patientSummary is an ARRAY (len=" + rawPS.length + "), converting to object");
+        const items = coerceToStringArray(rawPS);
+        rawPS = {
+            overallSummary: items[0] || "",
+            keyTakeaways: items.slice(1),
+        };
+    }
+
+    // Also check if the AI placed summary fields at the top level instead of nesting
+    if (!rawPS || typeof rawPS !== "object") {
+        rawPS = {};
+    }
+    if (!rawPS.overallSummary && !rawPS.summary) {
+        const topLevelSummary = findByAlias(raw, [
+            "overallSummary", "overall_summary", "summary", "analysis", "overview",
+        ]);
+        if (topLevelSummary) rawPS.overallSummary = topLevelSummary;
+    }
+    if (!rawPS.keyTakeaways && !rawPS.takeaways) {
+        const topLevelTakeaways = findByAlias(raw, [
+            "keyTakeaways", "key_takeaways", "takeaways", "keyPoints", "highlights",
+        ]);
+        if (topLevelTakeaways) rawPS.keyTakeaways = topLevelTakeaways;
+    }
+
+    if (rawPS && typeof rawPS === "object" && !Array.isArray(rawPS)) {
+        console.log("[analyzeDocument] patientSummary keys:", Object.keys(rawPS),
+            "overallSummary type:", typeof rawPS.overallSummary,
+            "keyTakeaways type:", typeof rawPS.keyTakeaways,
+            Array.isArray(rawPS.keyTakeaways) ? `(len=${rawPS.keyTakeaways.length})` : "");
+
+        const rawSummary = findByAlias(rawPS, [
             "overallSummary", "overall_summary", "summary",
             "overallAnalysis", "generalSummary", "patientSummary",
             "analysis", "overview",
         ]);
-        const keyTakeaways = findByAlias(rawPS, [
+        const rawTakeaways = findByAlias(rawPS, [
             "keyTakeaways", "key_takeaways", "takeaways",
             "keyPoints", "key_points", "highlights", "mainPoints",
         ]);
 
+        const overallSummary = coerceToString(rawSummary);
+        const keyTakeaways = coerceToStringArray(rawTakeaways);
+
         result.patientSummary = {
-            overallSummary: typeof overallSummary === "string"
-                ? overallSummary
-                : "Analysis completed. See key takeaways and questions for your doctor below.",
-            keyTakeaways: Array.isArray(keyTakeaways)
-                ? keyTakeaways.filter((s: unknown) => typeof s === "string").slice(0, 7)
+            overallSummary: overallSummary ||
+                "Analysis completed. See key takeaways and questions for your doctor below.",
+            keyTakeaways: keyTakeaways.length > 0
+                ? keyTakeaways.slice(0, 7)
                 : ["Please review the document details with your healthcare provider"],
         };
 
