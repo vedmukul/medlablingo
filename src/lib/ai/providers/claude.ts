@@ -23,7 +23,7 @@ export class ClaudeProvider implements AIProvider {
         try {
             const message = await this.client.messages.create({
                 model: "claude-sonnet-4-5",
-                max_tokens: 4096,
+                max_tokens: 8192,
                 temperature: 0.3,
                 system: systemPrompt,
                 messages: [{ role: "user", content: userPrompt }],

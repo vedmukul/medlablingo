@@ -17,19 +17,19 @@ export interface ModelInfo {
 /**
  * Resolves the first available AI provider based on configured API keys.
  *
- * Priority: Anthropic Claude → Google Gemini → OpenAI → null (mock)
+ * Priority: Google Gemini → Anthropic Claude → OpenAI → null (mock)
  *
  * @returns The first available provider, or null if none configured.
  */
 export function resolveProvider(): AIProvider | null {
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
-    if (anthropicKey) {
-        return new ClaudeProvider(anthropicKey);
-    }
-
     const googleKey = process.env.GOOGLE_AI_API_KEY;
     if (googleKey) {
         return new GeminiProvider(googleKey);
+    }
+
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    if (anthropicKey) {
+        return new ClaudeProvider(anthropicKey);
     }
 
     const openaiKey = process.env.OPENAI_API_KEY;
@@ -48,7 +48,7 @@ export function getModelInfo(provider: AIProvider): ModelInfo {
         case "anthropic":
             return { provider: "anthropic", modelName: "claude-sonnet-4-5", temperature: 0.3 };
         case "gemini":
-            return { provider: "google", modelName: "gemini-3-flash-preview", temperature: 0.3 };
+            return { provider: "google", modelName: "gemini-2.5-flash", temperature: 0.3 };
         case "openai":
             return { provider: "openai", modelName: "gpt-4o-mini", temperature: 0.3 };
         default:
