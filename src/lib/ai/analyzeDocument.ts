@@ -439,6 +439,14 @@ function postProcessResponse(
             labs: Array.isArray(labs)
                 ? labs.map((lab: any) => {
                     if (!lab || typeof lab !== "object") return lab;
+
+                    // Robust extraction for explanation to handle LLM arbitrarily nesting objects
+                    let rawExp = findByAlias(lab, ["explanation", "description", "interpretation", "meaning", "details", "comment", "note"]) ?? "No explanation available.";
+                    let explanation = typeof rawExp === "string" ? rawExp :
+                        (typeof rawExp === "object" && rawExp !== null) ?
+                            Object.values(rawExp).filter(v => typeof v === "string").join(" ") :
+                            String(rawExp);
+
                     return {
                         name: findByAlias(lab, ["name", "testName", "test_name", "labName", "lab_name", "test", "parameter"]) ?? "Unknown",
                         value: String(findByAlias(lab, ["value", "result", "testValue", "test_value", "resultValue", "measured"]) ?? "N/A"),
@@ -454,7 +462,7 @@ function postProcessResponse(
                             ["low", "medium", "high", "unknown"],
                             "unknown"
                         ),
-                        explanation: findByAlias(lab, ["explanation", "description", "interpretation", "meaning", "details", "comment", "note"]) ?? "No explanation available.",
+                        explanation,
                         ...(typeof lab.confidenceScore === "number" ? { confidenceScore: lab.confidenceScore } : {}),
                     };
                 })
