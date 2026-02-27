@@ -19,7 +19,7 @@ import { z } from "zod";
 // Shared Enums & Utilities
 // ─────────────────────────────────────────────────────────────────────────────
 
-const DocumentTypeSchema = z.enum(["lab_report", "discharge_instructions"]);
+const DocumentTypeSchema = z.enum(["lab_report", "discharge_instructions", "discharge_summary"]);
 const ReadingLevelSchema = z.enum(["simple", "standard"]);
 const ProvenanceSourceSchema = z.enum(["pdf_upload", "ehr_fhir", "paste"]);
 
@@ -116,6 +116,7 @@ const MedicationSchema = z
         name: z.string(),
         purposePlain: z.string(),
         howToTakeFromDoc: z.string(),
+        timing: z.string().optional(),
         cautionsGeneral: z.string(),
     })
     .strict();
@@ -131,6 +132,29 @@ const DischargeSectionSchema = z
         diagnosesMentionedInDoc: z.array(z.string()),
     })
     .strict();
+
+const ImagingProcedureSchema = z
+    .object({
+        name: z.string(),
+        date: z.string().optional(),
+        findings: z.string(),
+        keyMeasurements: z.string().optional(),
+    })
+    .strict();
+
+const DiscontinuedMedicationSchema = z
+    .object({
+        name: z.string(),
+        reason: z.string(),
+        replacedBy: z.string().optional(),
+    })
+    .strict();
+
+const DischargeSummarySectionSchema = DischargeSectionSchema.extend({
+    dietInstructions: z.array(z.string()).optional(),
+    activityRestrictions: z.array(z.string()).optional(),
+    dailyMonitoring: z.array(z.string()).optional(),
+}).strict();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Analysis Schema with Discriminated Union
@@ -170,15 +194,31 @@ const DischargeInstructionsAnalysisSchema = BaseAnalysisSchema.extend({
 }).strict();
 
 /**
+ * Discharge Summary variant: a more comprehensive version of discharge instructions.
+ * Requires dischargeSection, allows optional labs, imaging, discontinued meds.
+ */
+const DischargeSummaryAnalysisSchema = BaseAnalysisSchema.extend({
+    meta: MetaSchema.extend({
+        documentType: z.literal("discharge_summary"),
+    }).strict(),
+    labsSection: LabsSectionSchema.optional(),
+    dischargeSection: DischargeSummarySectionSchema,
+    imagingAndProcedures: z.array(ImagingProcedureSchema).optional(),
+    discontinuedMedications: z.array(DiscontinuedMedicationSchema).optional(),
+}).strict();
+
+/**
  * Unified Analysis Schema: discriminated union on meta.documentType
  *
  * This enforces mutual exclusivity at the type level:
  * - lab_report → labsSection required, dischargeSection forbidden
  * - discharge_instructions → dischargeSection required, labsSection forbidden
+ * - discharge_summary → dischargeSection required, optional labs, imaging, discontinued meds
  */
 export const AnalysisSchema = z.discriminatedUnion("meta.documentType", [
     LabReportAnalysisSchema,
     DischargeInstructionsAnalysisSchema,
+    DischargeSummaryAnalysisSchema,
 ]);
 
 // Fallback: Use z.union if discriminatedUnion doesn't work with nested discriminator
@@ -187,6 +227,7 @@ export const AnalysisSchema = z.discriminatedUnion("meta.documentType", [
 export const AnalysisSchemaUnion = z.union([
     LabReportAnalysisSchema,
     DischargeInstructionsAnalysisSchema,
+    DischargeSummaryAnalysisSchema,
 ]);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -197,6 +238,9 @@ export type AnalysisResult = z.infer<typeof AnalysisSchemaUnion>;
 export type LabReportAnalysis = z.infer<typeof LabReportAnalysisSchema>;
 export type DischargeInstructionsAnalysis = z.infer<
     typeof DischargeInstructionsAnalysisSchema
+>;
+export type DischargeSummaryAnalysis = z.infer<
+    typeof DischargeSummaryAnalysisSchema
 >;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -247,6 +291,18 @@ export function isDischargeInstructions(
     return result.meta.documentType === "discharge_instructions";
 }
 
+/**
+ * Type guard: checks if an analysis result is a discharge summary
+ *
+ * @param result - The analysis result to check
+ * @returns true if the result is a discharge summary
+ */
+export function isDischargeSummary(
+    result: AnalysisResult
+): result is DischargeSummaryAnalysis {
+    return result.meta.documentType === "discharge_summary";
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Re-exports for convenience
 // ─────────────────────────────────────────────────────────────────────────────
@@ -259,4 +315,7 @@ export {
     LabImportanceSchema,
     DischargeStatusSchema,
     ConfidenceScoreSchema,
+    ImagingProcedureSchema,
+    DiscontinuedMedicationSchema,
+    DischargeSummarySectionSchema,
 };

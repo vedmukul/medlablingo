@@ -11,7 +11,7 @@ import type { ModelInfo } from "./providers/resolve";
  */
 export interface AnalyzeDocumentInput {
     text: string;
-    documentType: "lab_report" | "discharge_instructions";
+    documentType: "lab_report" | "discharge_instructions" | "discharge_summary";
     readingLevel: "simple" | "standard";
 }
 
@@ -302,7 +302,7 @@ function findFirstArray(obj: any, exclude: Set<string> = new Set()): any[] | und
 function postProcessResponse(
     response: unknown,
     modelInfo: ModelInfo,
-    knownDocumentType: "lab_report" | "discharge_instructions",
+    knownDocumentType: "lab_report" | "discharge_instructions" | "discharge_summary",
     knownReadingLevel: "simple" | "standard"
 ): unknown {
     if (!response || typeof response !== "object") {
@@ -314,7 +314,7 @@ function postProcessResponse(
     // ── 1. Enforce section exclusivity based on the REQUESTED type ──
     if (knownDocumentType === "lab_report") {
         delete raw.dischargeSection;
-    } else {
+    } else if (knownDocumentType === "discharge_instructions") {
         delete raw.labsSection;
     }
     if (raw.dischargeSection === null) delete raw.dischargeSection;
@@ -350,7 +350,7 @@ function postProcessResponse(
     const TOP_KEYS = [
         "meta", "patientSummary", "questionsForDoctor",
         "questionsForDoctorConfidence", "whatWeCouldNotDetermine",
-        "labsSection", "dischargeSection",
+        "labsSection", "dischargeSection", "imagingAndProcedures", "discontinuedMedications",
     ] as const;
     const result: any = pick(raw, TOP_KEYS);
 
@@ -546,14 +546,32 @@ function postProcessResponse(
             diagnosesMentionedInDoc: findByAlias(rawDC, ["diagnosesMentionedInDoc", "diagnoses", "diagnosis", "diagnosesMentioned", "conditions"]) ?? [],
         };
 
+        if (knownDocumentType === "discharge_summary") {
+            result.dischargeSection.dietInstructions = findByAlias(rawDC, ["dietInstructions", "diet_instructions", "diet"]) ?? [];
+            result.dischargeSection.activityRestrictions = findByAlias(rawDC, ["activityRestrictions", "activity_restrictions", "activity"]) ?? [];
+            result.dischargeSection.dailyMonitoring = findByAlias(rawDC, ["dailyMonitoring", "daily_monitoring", "monitoring"]) ?? [];
+        }
+
         if (Array.isArray(result.dischargeSection.medications)) {
             const MED_KEYS = [
-                "name", "purposePlain", "howToTakeFromDoc", "cautionsGeneral",
+                "name", "purposePlain", "howToTakeFromDoc", "cautionsGeneral", "timing"
             ] as const;
             result.dischargeSection.medications = result.dischargeSection.medications.map(
                 (med: any) =>
                     med && typeof med === "object" ? pick(med, MED_KEYS) : med
             );
+        }
+    }
+
+    if (knownDocumentType === "discharge_summary") {
+        const rawImaging = findByAlias(raw, ["imagingAndProcedures", "imaging_and_procedures", "imaging", "procedures"]);
+        if (Array.isArray(rawImaging)) {
+            result.imagingAndProcedures = rawImaging.map((i: any) => i && typeof i === "object" ? pick(i, ["name", "date", "findings", "keyMeasurements"]) : i);
+        }
+
+        const rawDiscMeds = findByAlias(raw, ["discontinuedMedications", "discontinued_medications", "stoppedMedications", "stoppedMeds"]);
+        if (Array.isArray(rawDiscMeds)) {
+            result.discontinuedMedications = rawDiscMeds.map((m: any) => m && typeof m === "object" ? pick(m, ["name", "reason", "replacedBy"]) : m);
         }
     }
 
@@ -566,7 +584,7 @@ function postProcessResponse(
             labs: [],
         };
     }
-    if (knownDocumentType === "discharge_instructions" && !result.dischargeSection) {
+    if ((knownDocumentType === "discharge_instructions" || knownDocumentType === "discharge_summary") && !result.dischargeSection) {
         result.dischargeSection = {
             status: "draft" as const,
             homeCareSteps: [],
@@ -590,7 +608,7 @@ function postProcessResponse(
  * Now includes guidance on confidence scoring
  */
 function buildSystemPrompt(
-    documentType: "lab_report" | "discharge_instructions",
+    documentType: "lab_report" | "discharge_instructions" | "discharge_summary",
     readingLevel: "simple" | "standard"
 ): string {
     const readingLevelGuidance =
@@ -634,7 +652,37 @@ REQUIRED FIELDS:
 - patientSummary: overall summary and key takeaways (3-7 items)
 - questionsForDoctor: 5-10 questions the patient should ask their doctor
 - whatWeCouldNotDetermine: things we couldn't interpret from the document
-${documentType === "lab_report" ? "- labsSection: analysis of lab results (REQUIRED). Do NOT include dischargeSection at all." : "- dischargeSection: discharge instructions breakdown (REQUIRED). Do NOT include labsSection at all."}
+${documentType === "lab_report"
+            ? "- labsSection: analysis of lab results (REQUIRED). Do NOT include dischargeSection at all."
+            : documentType === "discharge_instructions"
+                ? "- dischargeSection: discharge instructions breakdown (REQUIRED). Do NOT include labsSection at all."
+                : `- labsSection: (OPTIONAL) If lab results are present, extract ALL labs with values, units, reference ranges, flags, and plain-language explanations. Include serial/trending values when available (use the most recent value as the primary, note trends in the explanation).
+- dischargeSection: (REQUIRED) Extract:
+    - status: "approved"
+    - homeCareSteps: ALL home care instructions (diet, activity, wound care, daily monitoring tasks). Be comprehensive — extract EVERY instruction, not just a summary.
+    - medications: ALL discharge medications with name, plain-language purpose, dosing instructions exactly as written, and cautions/warnings. Include timing relative to other medications (e.g., "Take metolazone 30 minutes BEFORE furosemide"). Do NOT skip any medications.
+    - followUp: ALL follow-up appointments with specialty, provider, date/time, and purpose
+    - warningSignsFromDoc: Warning signs explicitly mentioned in the document
+    - generalRedFlags: General emergency red flags
+    - diagnosesMentionedInDoc: ALL diagnoses listed (primary + secondary/comorbid)
+    - dietInstructions: Specific diet instructions if present (sodium restriction, fluid limit, calorie target, etc.)
+    - activityRestrictions: Activity limitations and exercise guidance
+    - dailyMonitoring: Daily self-monitoring tasks (weight, blood sugar, wound checks, etc.)
+- imagingAndProcedures: (OPTIONAL) If imaging studies or procedures are described, extract each one with:
+    - name, date, plain-language findings, key measurements with interpretation
+- discontinuedMedications: (OPTIONAL) If medications were stopped/discontinued, list each with the reason in plain language and what replaced it (if anything)
+
+EXTRACTION PRIORITY FOR DISCHARGE SUMMARIES:
+1. Medications (most actionable for patients)
+2. Follow-up appointments (time-sensitive)
+3. Warning signs / red flags (safety-critical)
+4. Home care instructions (daily actions)
+5. Lab results (understanding health status)
+6. Diagnoses (context)
+7. Imaging/procedures (supporting information)
+8. Discontinued medications (awareness)
+
+COMPLETENESS RULE: Discharge summaries are the patient's "instruction manual" for going home. Extract EVERYTHING. If the document lists 15 medications, return all 15. If there are 8 follow-up appointments, return all 8. Do not summarize or truncate — patients need every detail.`}
 
 Remember: Educational only, not medical advice. Always include safety disclaimers.`;
 }
@@ -644,7 +692,7 @@ Remember: Educational only, not medical advice. Always include safety disclaimer
  */
 function buildUserPrompt(
     redactedText: string,
-    documentType: "lab_report" | "discharge_instructions"
+    documentType: "lab_report" | "discharge_instructions" | "discharge_summary"
 ): string {
     return `Analyze this ${documentType.replace("_", " ")} and provide educational insights to help the patient understand it and prepare for their doctor visit.
 
@@ -654,7 +702,7 @@ ${redactedText}
 Remember:
 1. Output ONLY valid JSON (no markdown, no extra text)
 2. Match the exact schema for ${documentType}
-3. ${documentType === "lab_report" ? "Include labsSection. Do NOT include dischargeSection." : "Include dischargeSection. Do NOT include labsSection."}
+3. ${documentType === "lab_report" ? "Include labsSection. Do NOT include dischargeSection." : documentType === "discharge_instructions" ? "Include dischargeSection. Do NOT include labsSection." : "Include dischargeSection. Labs, imaging, and discontinued meds are optional."}
 4. Focus strictly on explaining and simplifying the text. Do not provide medical advice.
 5. DO NOT refuse to explain the document. DO NOT add disclaimers telling the user to consult their doctor for an explanation; provide the explanation yourself.
 6. Add confidence scores (0.0-1.0) where you have reasonable certainty based on document clarity and explicitness
@@ -666,7 +714,7 @@ Remember:
  */
 function buildRetryPrompt(
     redactedText: string,
-    documentType: "lab_report" | "discharge_instructions",
+    documentType: "lab_report" | "discharge_instructions" | "discharge_summary",
     previousResponse: string,
     validationError: any
 ): string {
@@ -694,7 +742,7 @@ Output the FIXED JSON now (no markdown, no explanation, just the JSON):`;
  * Returns mock analysis result for testing without API key
  */
 function getMockAnalysisResult(
-    documentType: "lab_report" | "discharge_instructions",
+    documentType: "lab_report" | "discharge_instructions" | "discharge_summary",
     readingLevel: "simple" | "standard"
 ): AnalysisResult {
     const baseMeta = {

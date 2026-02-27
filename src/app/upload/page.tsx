@@ -315,6 +315,9 @@ function UploadForm() {
                         <option value="discharge_instructions">
                             Discharge Instructions
                         </option>
+                        <option value="discharge_summary">
+                            Discharge Summary
+                        </option>
                     </select>
                 </div>
 
@@ -343,8 +346,8 @@ function UploadForm() {
                     </label>
                     <div
                         className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md transition-all ${isDragOver
-                                ? "border-indigo-500 bg-indigo-50"
-                                : "border-gray-300 hover:border-indigo-400"
+                            ? "border-indigo-500 bg-indigo-50"
+                            : "border-gray-300 hover:border-indigo-400"
                             } ${file ? "bg-green-50 border-green-400" : ""}`}
                         onDragEnter={handleDragEnter}
                         onDragOver={handleDragOver}

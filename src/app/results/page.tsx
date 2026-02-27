@@ -315,9 +315,50 @@ export default function ResultsPage() {
                                             <h3 className="text-sm font-medium text-gray-700 mb-1">Medications</h3>
                                             <div className="space-y-2">
                                                 {(t?.medications ?? result.dischargeSection.medications).map((m: any, i: number) => (
-                                                    <div key={i} className="bg-gray-50 rounded p-3 text-sm">
-                                                        <span className="font-medium">{m.name}</span>
+                                                    <div key={i} className="bg-gray-50 rounded p-3 text-sm flex flex-col gap-1">
+                                                        <span className="font-semibold text-gray-800">{m.name}</span>
                                                         <p className="text-gray-600">{m.purposePlain}</p>
+                                                        {(m.howToTakeFromDoc || m.timing) && (
+                                                            <div className="text-gray-700 bg-white p-2 mt-1 rounded border border-gray-100">
+                                                                {m.timing && <span className="font-medium inline-block mr-2">⏱ {m.timing}</span>}
+                                                                <span>{m.howToTakeFromDoc}</span>
+                                                            </div>
+                                                        )}
+                                                        {m.cautionsGeneral && <p className="text-red-700 text-xs mt-1 border-t border-red-100 pt-1">⚠️ {m.cautionsGeneral}</p>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* New Discharge Summary Optional Arrays */}
+                                    {(result as any).imagingAndProcedures?.length > 0 && (
+                                        <div className="pt-4">
+                                            <h3 className="text-sm font-medium text-navy mb-2">Imaging & Procedures</h3>
+                                            <div className="space-y-2">
+                                                {(result as any).imagingAndProcedures.map((item: any, i: number) => (
+                                                    <div key={i} className="bg-white border rounded p-3 text-sm shadow-sm">
+                                                        <div className="flex justify-between font-semibold text-navy">
+                                                            <span>{item.name}</span>
+                                                            {item.date && <span className="text-gray-500 text-xs ml-2 mt-0.5">{item.date}</span>}
+                                                        </div>
+                                                        <p className="text-gray-700 mt-1">{item.findings}</p>
+                                                        {item.keyMeasurements && <p className="text-gray-500 mt-2 border-t pt-1 text-xs">Measurements: {item.keyMeasurements}</p>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {(result as any).discontinuedMedications?.length > 0 && (
+                                        <div className="pt-4">
+                                            <h3 className="text-sm font-medium text-amber-700 mb-2">Stopped Medications</h3>
+                                            <div className="space-y-2">
+                                                {(result as any).discontinuedMedications.map((item: any, i: number) => (
+                                                    <div key={i} className="bg-amber-50 rounded p-3 text-sm border border-amber-200">
+                                                        <span className="font-semibold text-amber-900 line-through">{item.name}</span>
+                                                        <p className="text-amber-800 mt-1">{item.reason}</p>
+                                                        {item.replacedBy && <p className="text-amber-900 text-xs mt-2 border-t border-amber-200 pt-1">Replaced by: <strong>{item.replacedBy}</strong></p>}
                                                     </div>
                                                 ))}
                                             </div>
