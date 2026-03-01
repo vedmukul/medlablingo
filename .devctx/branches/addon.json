@@ -1,0 +1,140 @@
+[
+  {
+    "id": "01859aff-2520-4810-9aa2-c7feca5a7567",
+    "timestamp": "2026-02-27T16:15:16.809Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: feat: comprehensive discharge summary extraction and UI overhaul",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: feat: comprehensive discharge summary extraction and UI overhaul",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "fd96385 feat: comprehensive discharge summary extraction and UI overhaul",
+      "5a0ca63 fix(ui): always render Key Findings section if overallLabNote is present",
+      "c852e76 feat: comprehensive discharge_summary parsing and UI visualization (P3)",
+      "3c5a62e fix: handle patientSummary returned as array instead of object by Gemini",
+      "313ac0c feat: add translation, improve chatbot tone, switch to Gemini 2.5 Flash"
+    ]
+  },
+  {
+    "id": "5128abbd-9dad-47ec-916a-676cd197ca80",
+    "timestamp": "2026-02-27T18:15:45.718Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: Comprehensive fixes for Discharge Summary UI and Data Handling, refine LLM extraction rules, and ensure correct conditional rendering of Labs and Imaging.",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: Comprehensive fixes for Discharge Summary UI and Data Handling, refine LLM extraction rules, and ensure correct conditional rendering of Labs and Imaging.",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "6477ca1 Comprehensive fixes for Discharge Summary UI and Data Handling, refine LLM extraction rules, and ensure correct conditional rendering of Labs and Imaging.",
+      "fd96385 feat: comprehensive discharge summary extraction and UI overhaul",
+      "5a0ca63 fix(ui): always render Key Findings section if overallLabNote is present",
+      "c852e76 feat: comprehensive discharge_summary parsing and UI visualization (P3)",
+      "3c5a62e fix: handle patientSummary returned as array instead of object by Gemini"
+    ]
+  },
+  {
+    "id": "555a33ab-8f3b-4597-b3d1-c9134d1e669b",
+    "timestamp": "2026-02-27T18:21:53.338Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: Fix sticky navigation anchor tags by passing IDs to nested sections",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: Fix sticky navigation anchor tags by passing IDs to nested sections",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "1115ef4 Fix sticky navigation anchor tags by passing IDs to nested sections",
+      "6477ca1 Comprehensive fixes for Discharge Summary UI and Data Handling, refine LLM extraction rules, and ensure correct conditional rendering of Labs and Imaging.",
+      "fd96385 feat: comprehensive discharge summary extraction and UI overhaul",
+      "5a0ca63 fix(ui): always render Key Findings section if overallLabNote is present",
+      "c852e76 feat: comprehensive discharge_summary parsing and UI visualization (P3)"
+    ]
+  },
+  {
+    "id": "3e96cac0-1a16-4b72-a997-1bb916fca1ad",
+    "timestamp": "2026-02-27T18:25:01.102Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: Save current state and context",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: Save current state and context",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "db16976 Save current state and context",
+      "1115ef4 Fix sticky navigation anchor tags by passing IDs to nested sections",
+      "6477ca1 Comprehensive fixes for Discharge Summary UI and Data Handling, refine LLM extraction rules, and ensure correct conditional rendering of Labs and Imaging.",
+      "fd96385 feat: comprehensive discharge summary extraction and UI overhaul",
+      "5a0ca63 fix(ui): always render Key Findings section if overallLabNote is present"
+    ]
+  },
+  {
+    "id": "1eb179c7-e9ae-4962-ab37-f030488a2189",
+    "timestamp": "2026-03-01T01:47:52.995Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: chore: update next.js to patch CVE-2025-66478 Vercel vulnerability",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: chore: update next.js to patch CVE-2025-66478 Vercel vulnerability",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "d985353 chore: update next.js to patch CVE-2025-66478 Vercel vulnerability",
+      "db16976 Save current state and context",
+      "1115ef4 Fix sticky navigation anchor tags by passing IDs to nested sections",
+      "6477ca1 Comprehensive fixes for Discharge Summary UI and Data Handling, refine LLM extraction rules, and ensure correct conditional rendering of Labs and Imaging.",
+      "fd96385 feat: comprehensive discharge summary extraction and UI overhaul"
+    ]
+  },
+  {
+    "id": "22df9676-d303-423c-88df-22f887d6dd08",
+    "timestamp": "2026-03-01T01:50:14.631Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Saved context for Discharge Summary UI rework, LLM extraction rules, and Next.js CVE patch",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Saved context for Discharge Summary UI rework, LLM extraction rules, and Next.js CVE patch",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "d985353 chore: update next.js to patch CVE-2025-66478 Vercel vulnerability",
+      "db16976 Save current state and context",
+      "1115ef4 Fix sticky navigation anchor tags by passing IDs to nested sections",
+      "6477ca1 Comprehensive fixes for Discharge Summary UI and Data Handling, refine LLM extraction rules, and ensure correct conditional rendering of Labs and Imaging.",
+      "fd96385 feat: comprehensive discharge summary extraction and UI overhaul"
+    ]
+  }
+]

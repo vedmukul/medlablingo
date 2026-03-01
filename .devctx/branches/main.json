@@ -1,0 +1,517 @@
+[
+  {
+    "id": "df534abe-0f55-4f6a-b595-ff174e1fdcc4",
+    "timestamp": "2026-02-20T19:58:57.906Z",
+    "branch": "main",
+    "repo": "lablingo",
+    "author": "Mukul Ved",
+    "task": "MedLabLingo – renamed from LabLingo, dev server running on port 3000, Next.js 15 app with PDF analysis, AI document understanding, safety/compliance modules, persistence/history, and print/clinician review pages",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "MedLabLingo – renamed from LabLingo, dev server running on port 3000, Next.js 15 app with PDF analysis, AI document understanding, safety/compliance modules, persistence/history, and print/clinician review pages",
+    "nextSteps": [],
+    "filesChanged": [
+      ".env.example",
+      ".gitignore",
+      "DEPLOYMENT.md",
+      "README.md",
+      "package-lock.json",
+      "package.json",
+      "src/app/api/analyze/route.ts",
+      "src/app/clinician/review/page.tsx",
+      "src/app/globals.css",
+      "src/app/layout.tsx",
+      "src/app/page.tsx",
+      "src/app/results/page.tsx",
+      "src/app/upload/page.tsx",
+      "src/components/LabsTable.tsx",
+      "src/contracts/analysisSchema.ts",
+      "src/lib/ai/analyzeDocument.ts",
+      "src/lib/compliance/audit.ts",
+      "src/lib/compliance/dataPolicy.ts",
+      "src/lib/persistence/analysisStorage.ts",
+      "tests/ai-smoke.ts",
+      "src/app/results/print/page.tsx",
+      "src/components/LabRangeBar.tsx",
+      "src/lib/ai/providers/gemini.ts",
+      "src/lib/ai/providers/openai.ts",
+      "src/lib/ai/providers/types.ts",
+      "tests/persistence.test.ts",
+      "tests/schema.test.ts"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "60d179a feat: production-ready observability, compliance, and clinician review",
+      "3dbe0ab test: add rate limiter reset helper and tsx observability test",
+      "b4731fb test: add audit state helpers and fix compliance assertions",
+      "326fbf9 chore: update docs and dependencies",
+      "3db6116 feat: enhance results rendering components"
+    ]
+  },
+  {
+    "id": "f0e3f2b8-508c-466b-8386-d8083568eb00",
+    "timestamp": "2026-02-20T20:01:27.030Z",
+    "branch": "main",
+    "repo": "lablingo",
+    "author": "Mukul Ved",
+    "task": "FULL PROJECT HISTORY — MedLabLingo (formerly LabLingo): (1) Scaffolded Next.js 15 + TypeScript + Tailwind at /Users/mukul/Desktop/lablingo. (2) Built safety modules: redact() strips PHI (emails, phones, DOB, MRN, addresses) in src/lib/safety/redact.ts; safetyFilter() replaces unsafe medical overreach phrases in src/lib/safety/safetyFilter.ts. (3) PDF Analysis Endpoint /api/analyze: multipart upload, pdf-parse extraction in src/lib/pdf/extractText.ts, PHI scrubbing, error handling. (4) Analysis Schema (src/contracts/analysisSchema.ts): Zod + strict schemas, documentType = lab_report|discharge_instructions, mutual exclusivity (labsSection vs dischargeSection), exports: AnalysisSchema, AnalysisResult, validateAnalysisResult, isLabReport, isDischargeInstructions. (5) AI Analysis (src/lib/ai/analyzeDocument.ts): redact before model call, robust prompt, JSON retry, mock mode when no API key, multi-provider (Gemini default, OpenAI fallback) via src/lib/ai/providers/. (6) Frontend: landing (page.tsx), upload page, results page, print page (/results/print), clinician review page (/clinician/review). Components: DisclaimerBanner, SummaryCard, Loading, LabsTable, LabRangeBar, MedicationCards, DischargeChecklist, QuestionsForDoctor. (7) Security hardening: 24h TTL in dataPolicy.ts, PHI-free logs/responses, rate limiter, audit log, compliance tests. (8) Live progress on /api/analyze: tracks stage durations + completed stages, no PHI in events. (9) Persistence (src/lib/persistence/analysisStorage.ts): localStorage, up to 10 entries, fields: documentType/readingLevel/extractedTextLength/extractionPreview/result/requestId/createdAt, excludes raw text+PDF, 24h TTL auto-pruned on load, API: saveAnalysis/loadLatestAnalysis/loadHistory/clearAnalysis. (10) Lab Trends in LabsTable: compares current vs historical localStorage values, shows up/down/stable trend + delta + previous value, normalizes lab names, fallback for no history. (11) Rename LabLingo→MedLabLingo everywhere: package.json, layout.tsx, page.tsx, clinician review, print page, dataPolicy.ts, README.md, DEPLOYMENT.md. Dev server: http://localhost:3000. Branch: main.",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "FULL PROJECT HISTORY — MedLabLingo (formerly LabLingo): (1) Scaffolded Next.js 15 + TypeScript + Tailwind at /Users/mukul/Desktop/lablingo. (2) Built safety modules: redact() strips PHI (emails, phones, DOB, MRN, addresses) in src/lib/safety/redact.ts; safetyFilter() replaces unsafe medical overreach phrases in src/lib/safety/safetyFilter.ts. (3) PDF Analysis Endpoint /api/analyze: multipart upload, pdf-parse extraction in src/lib/pdf/extractText.ts, PHI scrubbing, error handling. (4) Analysis Schema (src/contracts/analysisSchema.ts): Zod + strict schemas, documentType = lab_report|discharge_instructions, mutual exclusivity (labsSection vs dischargeSection), exports: AnalysisSchema, AnalysisResult, validateAnalysisResult, isLabReport, isDischargeInstructions. (5) AI Analysis (src/lib/ai/analyzeDocument.ts): redact before model call, robust prompt, JSON retry, mock mode when no API key, multi-provider (Gemini default, OpenAI fallback) via src/lib/ai/providers/. (6) Frontend: landing (page.tsx), upload page, results page, print page (/results/print), clinician review page (/clinician/review). Components: DisclaimerBanner, SummaryCard, Loading, LabsTable, LabRangeBar, MedicationCards, DischargeChecklist, QuestionsForDoctor. (7) Security hardening: 24h TTL in dataPolicy.ts, PHI-free logs/responses, rate limiter, audit log, compliance tests. (8) Live progress on /api/analyze: tracks stage durations + completed stages, no PHI in events. (9) Persistence (src/lib/persistence/analysisStorage.ts): localStorage, up to 10 entries, fields: documentType/readingLevel/extractedTextLength/extractionPreview/result/requestId/createdAt, excludes raw text+PDF, 24h TTL auto-pruned on load, API: saveAnalysis/loadLatestAnalysis/loadHistory/clearAnalysis. (10) Lab Trends in LabsTable: compares current vs historical localStorage values, shows up/down/stable trend + delta + previous value, normalizes lab names, fallback for no history. (11) Rename LabLingo→MedLabLingo everywhere: package.json, layout.tsx, page.tsx, clinician review, print page, dataPolicy.ts, README.md, DEPLOYMENT.md. Dev server: http://localhost:3000. Branch: main.",
+    "nextSteps": [],
+    "filesChanged": [
+      ".env.example",
+      ".gitignore",
+      "DEPLOYMENT.md",
+      "README.md",
+      "package-lock.json",
+      "package.json",
+      "src/app/api/analyze/route.ts",
+      "src/app/clinician/review/page.tsx",
+      "src/app/globals.css",
+      "src/app/layout.tsx",
+      "src/app/page.tsx",
+      "src/app/results/page.tsx",
+      "src/app/upload/page.tsx",
+      "src/components/LabsTable.tsx",
+      "src/contracts/analysisSchema.ts",
+      "src/lib/ai/analyzeDocument.ts",
+      "src/lib/compliance/audit.ts",
+      "src/lib/compliance/dataPolicy.ts",
+      "src/lib/persistence/analysisStorage.ts",
+      "tests/ai-smoke.ts",
+      "src/app/results/print/page.tsx",
+      "src/components/LabRangeBar.tsx",
+      "src/lib/ai/providers/gemini.ts",
+      "src/lib/ai/providers/openai.ts",
+      "src/lib/ai/providers/types.ts",
+      "tests/persistence.test.ts",
+      "tests/schema.test.ts"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "60d179a feat: production-ready observability, compliance, and clinician review",
+      "3dbe0ab test: add rate limiter reset helper and tsx observability test",
+      "b4731fb test: add audit state helpers and fix compliance assertions",
+      "326fbf9 chore: update docs and dependencies",
+      "3db6116 feat: enhance results rendering components"
+    ]
+  },
+  {
+    "id": "081b006e-68b5-4544-ae14-c93b9cbec09e",
+    "timestamp": "2026-02-21T16:42:19.868Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "MedLabLingo — latest state (Feb 21): Added context-aware chatbot on results page. NEW: POST /api/chat endpoint (src/app/api/chat/route.ts) — takes messages[] + analysisResult as context, calls gpt-4o-mini strictly grounded on that analysis, applies safetyFilter(), rate-limited, mock mode supported. NEW: AnalysisChat.tsx component — user/AI message bubbles, bounce typing indicator, suggested question chips from questionsForDoctor, auto-scroll, error handling. results/page.tsx updated to render <AnalysisChat result={result} suggestedQuestions={result.questionsForDoctor} />. Also done: README rewritten for public release, Mermaid architecture diagram added, AGENT_RULES.md + next-env.d.ts removed from git, market impact doc written, all pushed to https://github.com/vedmukul/medlablingo (branch main, latest commit 6e657e7). Dev server running on http://localhost:3000.",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "MedLabLingo — latest state (Feb 21): Added context-aware chatbot on results page. NEW: POST /api/chat endpoint (src/app/api/chat/route.ts) — takes messages[] + analysisResult as context, calls gpt-4o-mini strictly grounded on that analysis, applies safetyFilter(), rate-limited, mock mode supported. NEW: AnalysisChat.tsx component — user/AI message bubbles, bounce typing indicator, suggested question chips from questionsForDoctor, auto-scroll, error handling. results/page.tsx updated to render <AnalysisChat result={result} suggestedQuestions={result.questionsForDoctor} />. Also done: README rewritten for public release, Mermaid architecture diagram added, AGENT_RULES.md + next-env.d.ts removed from git, market impact doc written, all pushed to https://github.com/vedmukul/medlablingo (branch main, latest commit 6e657e7). Dev server running on http://localhost:3000.",
+    "nextSteps": [],
+    "filesChanged": [],
+    "filesStaged": [],
+    "recentCommits": [
+      "6e657e7 feat: add context-aware analysis chatbot to results page",
+      "6123588 docs: add Mermaid architecture diagram to README",
+      "e8d863a chore: remove sensitive/auto-generated files, rewrite README for public release",
+      "20b3593 feat: MedLabLingo — full project with AI analysis, safety, compliance, persistence & trends",
+      "60d179a feat: production-ready observability, compliance, and clinician review"
+    ]
+  },
+  {
+    "id": "760e24f0-e757-4497-8ae6-e8190cc672c6",
+    "timestamp": "2026-02-21T16:43:47.984Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "MedLabLingo — Feb 21 session wrap-up: git post-commit hook installed (devctx auto-saves on every commit), all features complete and pushed to github.com/vedmukul/medlablingo. Latest features: chatbot /api/chat + AnalysisChat.tsx on results page, README rewritten with Mermaid diagram, sensitive files removed from git, market impact doc written.",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "MedLabLingo — Feb 21 session wrap-up: git post-commit hook installed (devctx auto-saves on every commit), all features complete and pushed to github.com/vedmukul/medlablingo. Latest features: chatbot /api/chat + AnalysisChat.tsx on results page, README rewritten with Mermaid diagram, sensitive files removed from git, market impact doc written.",
+    "nextSteps": [],
+    "filesChanged": [],
+    "filesStaged": [],
+    "recentCommits": [
+      "6e657e7 feat: add context-aware analysis chatbot to results page",
+      "6123588 docs: add Mermaid architecture diagram to README",
+      "e8d863a chore: remove sensitive/auto-generated files, rewrite README for public release",
+      "20b3593 feat: MedLabLingo — full project with AI analysis, safety, compliance, persistence & trends",
+      "60d179a feat: production-ready observability, compliance, and clinician review"
+    ]
+  },
+  {
+    "id": "db09e183-bc4c-495b-a9a0-67424395c17e",
+    "timestamp": "2026-02-24T04:21:54.595Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: feat: add Anthropic Claude provider + multi-provider resolver",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: feat: add Anthropic Claude provider + multi-provider resolver",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley/"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "6323f91 feat: add Anthropic Claude provider + multi-provider resolver",
+      "6e657e7 feat: add context-aware analysis chatbot to results page",
+      "6123588 docs: add Mermaid architecture diagram to README",
+      "e8d863a chore: remove sensitive/auto-generated files, rewrite README for public release",
+      "20b3593 feat: MedLabLingo — full project with AI analysis, safety, compliance, persistence & trends"
+    ]
+  },
+  {
+    "id": "4d57a79e-0184-4659-9d2c-7b7e7be2350b",
+    "timestamp": "2026-02-24T04:37:05.418Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: fix: correct Claude model name (claude-sonnet-4-5-20250514 → claude-sonnet-4-5)",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: fix: correct Claude model name (claude-sonnet-4-5-20250514 → claude-sonnet-4-5)",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley/"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "7fd8b0c fix: correct Claude model name (claude-sonnet-4-5-20250514 → claude-sonnet-4-5)",
+      "6323f91 feat: add Anthropic Claude provider + multi-provider resolver",
+      "6e657e7 feat: add context-aware analysis chatbot to results page",
+      "6123588 docs: add Mermaid architecture diagram to README",
+      "e8d863a chore: remove sensitive/auto-generated files, rewrite README for public release"
+    ]
+  },
+  {
+    "id": "3726e0c4-3ebf-424c-bb33-418c8f545dcb",
+    "timestamp": "2026-02-24T04:46:11.896Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: fix: robust JSON extraction in ClaudeProvider",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: fix: robust JSON extraction in ClaudeProvider",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley/"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "9b08401 fix: robust JSON extraction in ClaudeProvider",
+      "7fd8b0c fix: correct Claude model name (claude-sonnet-4-5-20250514 → claude-sonnet-4-5)",
+      "6323f91 feat: add Anthropic Claude provider + multi-provider resolver",
+      "6e657e7 feat: add context-aware analysis chatbot to results page",
+      "6123588 docs: add Mermaid architecture diagram to README"
+    ]
+  },
+  {
+    "id": "90a893ef-d096-4d33-a4d3-5c2fa3c7b672",
+    "timestamp": "2026-02-24T06:54:17.852Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "APi key working and doucmnets are parsing ",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "APi key working and doucmnets are parsing ",
+    "nextSteps": [],
+    "filesChanged": [
+      "src/components/AnalysisChat.tsx",
+      "src/lib/ai/analyzeDocument.ts",
+      "src/lib/ai/providers/claude.ts",
+      ".claude/worktrees/cranky-easley/"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "9b08401 fix: robust JSON extraction in ClaudeProvider",
+      "7fd8b0c fix: correct Claude model name (claude-sonnet-4-5-20250514 → claude-sonnet-4-5)",
+      "6323f91 feat: add Anthropic Claude provider + multi-provider resolver",
+      "6e657e7 feat: add context-aware analysis chatbot to results page",
+      "6123588 docs: add Mermaid architecture diagram to README"
+    ]
+  },
+  {
+    "id": "371b684c-b074-4093-a2ff-dd59b54b50be",
+    "timestamp": "2026-02-27T01:46:09.387Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Debugged AI response parsing (Zod validation, field aliasing, enum normalization for lab items), switched to Gemini 2.5 Flash, added translation feature, improved chatbot tone and UI (sticky sidebar), created startup pitch and email templates",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Debugged AI response parsing (Zod validation, field aliasing, enum normalization for lab items), switched to Gemini 2.5 Flash, added translation feature, improved chatbot tone and UI (sticky sidebar), created startup pitch and email templates",
+    "nextSteps": [],
+    "filesChanged": [
+      "src/app/api/chat/route.ts",
+      "src/app/results/page.tsx",
+      "src/components/AnalysisChat.tsx",
+      "src/lib/ai/analyzeDocument.ts",
+      "src/lib/ai/providers/claude.ts",
+      "src/lib/ai/providers/gemini.ts",
+      "src/lib/ai/providers/resolve.ts",
+      ".claude/worktrees/cranky-easley/",
+      "DEVCTX.md",
+      "EMAIL_PITCH.md",
+      "STARTUP_PITCH.md",
+      "src/app/api/translate/route.ts",
+      "src/components/TranslateButton.tsx"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "9b08401 fix: robust JSON extraction in ClaudeProvider",
+      "7fd8b0c fix: correct Claude model name (claude-sonnet-4-5-20250514 → claude-sonnet-4-5)",
+      "6323f91 feat: add Anthropic Claude provider + multi-provider resolver",
+      "6e657e7 feat: add context-aware analysis chatbot to results page",
+      "6123588 docs: add Mermaid architecture diagram to README"
+    ]
+  },
+  {
+    "id": "2cc5d3c0-aa66-4d18-aa5a-7fbda95a0138",
+    "timestamp": "2026-02-27T02:04:54.323Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: feat: implement clinical UI redesign phase 1 and 2",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: feat: implement clinical UI redesign phase 1 and 2",
+    "nextSteps": [],
+    "filesChanged": [
+      "src/app/api/chat/route.ts",
+      "src/lib/ai/analyzeDocument.ts",
+      "src/lib/ai/providers/claude.ts",
+      "src/lib/ai/providers/gemini.ts",
+      "src/lib/ai/providers/resolve.ts",
+      ".claude/worktrees/cranky-easley/",
+      "DEVCTX.md",
+      "EMAIL_PITCH.md",
+      "STARTUP_PITCH.md",
+      "src/app/api/translate/route.ts",
+      "src/components/TranslateButton.tsx"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "5cb416a feat: implement clinical UI redesign phase 1 and 2",
+      "9b08401 fix: robust JSON extraction in ClaudeProvider",
+      "7fd8b0c fix: correct Claude model name (claude-sonnet-4-5-20250514 → claude-sonnet-4-5)",
+      "6323f91 feat: add Anthropic Claude provider + multi-provider resolver",
+      "6e657e7 feat: add context-aware analysis chatbot to results page"
+    ]
+  },
+  {
+    "id": "e28cdd65-624f-4c21-aff1-741b12962d27",
+    "timestamp": "2026-02-27T02:05:55.168Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Implemented clinical UI redesign (Phase 1 & 2): updated color palette, fonts, chat drawer, and result cards.",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Implemented clinical UI redesign (Phase 1 & 2): updated color palette, fonts, chat drawer, and result cards.",
+    "nextSteps": [],
+    "filesChanged": [
+      "src/app/api/chat/route.ts",
+      "src/lib/ai/analyzeDocument.ts",
+      "src/lib/ai/providers/claude.ts",
+      "src/lib/ai/providers/gemini.ts",
+      "src/lib/ai/providers/resolve.ts",
+      ".claude/worktrees/cranky-easley/",
+      "DEVCTX.md",
+      "EMAIL_PITCH.md",
+      "STARTUP_PITCH.md",
+      "src/app/api/translate/route.ts",
+      "src/components/TranslateButton.tsx"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "5cb416a feat: implement clinical UI redesign phase 1 and 2",
+      "9b08401 fix: robust JSON extraction in ClaudeProvider",
+      "7fd8b0c fix: correct Claude model name (claude-sonnet-4-5-20250514 → claude-sonnet-4-5)",
+      "6323f91 feat: add Anthropic Claude provider + multi-provider resolver",
+      "6e657e7 feat: add context-aware analysis chatbot to results page"
+    ]
+  },
+  {
+    "id": "df851a16-27c5-4483-87c1-96c0a3572ae7",
+    "timestamp": "2026-02-27T02:11:19.987Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: fix: refine AI prompts to prevent over-refusal and improve patient-friendly summarization",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: fix: refine AI prompts to prevent over-refusal and improve patient-friendly summarization",
+    "nextSteps": [],
+    "filesChanged": [
+      "src/app/api/chat/route.ts",
+      "src/lib/ai/providers/claude.ts",
+      "src/lib/ai/providers/gemini.ts",
+      "src/lib/ai/providers/resolve.ts",
+      ".claude/worktrees/cranky-easley/",
+      "DEVCTX.md",
+      "EMAIL_PITCH.md",
+      "STARTUP_PITCH.md",
+      "src/app/api/translate/route.ts",
+      "src/components/TranslateButton.tsx"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "ca8104f fix: refine AI prompts to prevent over-refusal and improve patient-friendly summarization",
+      "5cb416a feat: implement clinical UI redesign phase 1 and 2",
+      "9b08401 fix: robust JSON extraction in ClaudeProvider",
+      "7fd8b0c fix: correct Claude model name (claude-sonnet-4-5-20250514 → claude-sonnet-4-5)",
+      "6323f91 feat: add Anthropic Claude provider + multi-provider resolver"
+    ]
+  },
+  {
+    "id": "c4b10d4e-faa9-48aa-9a99-44391f876961",
+    "timestamp": "2026-02-27T02:14:53.094Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: fix: robust parsing for LLM returning nested objects instead of strings for explanations",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: fix: robust parsing for LLM returning nested objects instead of strings for explanations",
+    "nextSteps": [],
+    "filesChanged": [
+      "src/app/api/chat/route.ts",
+      "src/lib/ai/providers/claude.ts",
+      "src/lib/ai/providers/gemini.ts",
+      "src/lib/ai/providers/resolve.ts",
+      ".claude/worktrees/cranky-easley/",
+      "DEVCTX.md",
+      "EMAIL_PITCH.md",
+      "STARTUP_PITCH.md",
+      "src/app/api/translate/route.ts",
+      "src/components/TranslateButton.tsx"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "c677722 fix: robust parsing for LLM returning nested objects instead of strings for explanations",
+      "ca8104f fix: refine AI prompts to prevent over-refusal and improve patient-friendly summarization",
+      "5cb416a feat: implement clinical UI redesign phase 1 and 2",
+      "9b08401 fix: robust JSON extraction in ClaudeProvider",
+      "7fd8b0c fix: correct Claude model name (claude-sonnet-4-5-20250514 → claude-sonnet-4-5)"
+    ]
+  },
+  {
+    "id": "c9f14e14-bcbd-4f58-8c35-60b6b0749c94",
+    "timestamp": "2026-02-27T02:17:58.902Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: feat: add translation, improve chatbot tone, switch to Gemini 2.5 Flash",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: feat: add translation, improve chatbot tone, switch to Gemini 2.5 Flash",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley/"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "313ac0c feat: add translation, improve chatbot tone, switch to Gemini 2.5 Flash",
+      "c677722 fix: robust parsing for LLM returning nested objects instead of strings for explanations",
+      "ca8104f fix: refine AI prompts to prevent over-refusal and improve patient-friendly summarization",
+      "5cb416a feat: implement clinical UI redesign phase 1 and 2",
+      "9b08401 fix: robust JSON extraction in ClaudeProvider"
+    ]
+  },
+  {
+    "id": "d79c1409-a90e-4268-b0f2-83e6a5d39d07",
+    "timestamp": "2026-02-27T02:27:56.258Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: fix: handle patientSummary returned as array instead of object by Gemini",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: fix: handle patientSummary returned as array instead of object by Gemini",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley/"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "3c5a62e fix: handle patientSummary returned as array instead of object by Gemini",
+      "313ac0c feat: add translation, improve chatbot tone, switch to Gemini 2.5 Flash",
+      "c677722 fix: robust parsing for LLM returning nested objects instead of strings for explanations",
+      "ca8104f fix: refine AI prompts to prevent over-refusal and improve patient-friendly summarization",
+      "5cb416a feat: implement clinical UI redesign phase 1 and 2"
+    ]
+  },
+  {
+    "id": "386ce718-0a9f-41fc-98c5-38ffe054cbb7",
+    "timestamp": "2026-02-27T04:46:15.989Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: feat: comprehensive discharge_summary parsing and UI visualization (P3)",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: feat: comprehensive discharge_summary parsing and UI visualization (P3)",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley/"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "c852e76 feat: comprehensive discharge_summary parsing and UI visualization (P3)",
+      "3c5a62e fix: handle patientSummary returned as array instead of object by Gemini",
+      "313ac0c feat: add translation, improve chatbot tone, switch to Gemini 2.5 Flash",
+      "c677722 fix: robust parsing for LLM returning nested objects instead of strings for explanations",
+      "ca8104f fix: refine AI prompts to prevent over-refusal and improve patient-friendly summarization"
+    ]
+  },
+  {
+    "id": "c5f52fe2-4619-4e99-a67c-e5f55bf3777e",
+    "timestamp": "2026-02-27T04:55:44.188Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: chore(ai): emphasize comprehensive extraction for discharge_summary",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: chore(ai): emphasize comprehensive extraction for discharge_summary",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley/"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "fe0597a chore(ai): emphasize comprehensive extraction for discharge_summary",
+      "c852e76 feat: comprehensive discharge_summary parsing and UI visualization (P3)",
+      "3c5a62e fix: handle patientSummary returned as array instead of object by Gemini",
+      "313ac0c feat: add translation, improve chatbot tone, switch to Gemini 2.5 Flash",
+      "c677722 fix: robust parsing for LLM returning nested objects instead of strings for explanations"
+    ]
+  },
+  {
+    "id": "ec264d3b-4ceb-4f81-9517-0b7264b45944",
+    "timestamp": "2026-02-27T05:04:57.366Z",
+    "branch": "main",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: fix(ui): always render Key Findings section if overallLabNote is present",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: fix(ui): always render Key Findings section if overallLabNote is present",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley/"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "5a0ca63 fix(ui): always render Key Findings section if overallLabNote is present",
+      "c852e76 feat: comprehensive discharge_summary parsing and UI visualization (P3)",
+      "3c5a62e fix: handle patientSummary returned as array instead of object by Gemini",
+      "313ac0c feat: add translation, improve chatbot tone, switch to Gemini 2.5 Flash",
+      "c677722 fix: robust parsing for LLM returning nested objects instead of strings for explanations"
+    ]
+  }
+]

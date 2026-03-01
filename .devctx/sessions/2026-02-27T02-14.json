@@ -1,0 +1,32 @@
+{
+  "id": "c4b10d4e-faa9-48aa-9a99-44391f876961",
+  "timestamp": "2026-02-27T02:14:53.094Z",
+  "branch": "main",
+  "repo": "medlablingo",
+  "author": "vedmukul",
+  "task": "Auto-saved on commit: fix: robust parsing for LLM returning nested objects instead of strings for explanations",
+  "approaches": [],
+  "decisions": [],
+  "currentState": "Auto-saved on commit: fix: robust parsing for LLM returning nested objects instead of strings for explanations",
+  "nextSteps": [],
+  "filesChanged": [
+    "src/app/api/chat/route.ts",
+    "src/lib/ai/providers/claude.ts",
+    "src/lib/ai/providers/gemini.ts",
+    "src/lib/ai/providers/resolve.ts",
+    ".claude/worktrees/cranky-easley/",
+    "DEVCTX.md",
+    "EMAIL_PITCH.md",
+    "STARTUP_PITCH.md",
+    "src/app/api/translate/route.ts",
+    "src/components/TranslateButton.tsx"
+  ],
+  "filesStaged": [],
+  "recentCommits": [
+    "c677722 fix: robust parsing for LLM returning nested objects instead of strings for explanations",
+    "ca8104f fix: refine AI prompts to prevent over-refusal and improve patient-friendly summarization",
+    "5cb416a feat: implement clinical UI redesign phase 1 and 2",
+    "9b08401 fix: robust JSON extraction in ClaudeProvider",
+    "7fd8b0c fix: correct Claude model name (claude-sonnet-4-5-20250514 → claude-sonnet-4-5)"
+  ]
+}
