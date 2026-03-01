@@ -108,7 +108,7 @@ export default function ResultsPage() {
         <div className="flex min-h-screen">
             {/* Left: Results */}
             <main className={`flex-1 p-6 space-y-6 transition-all ${chatOpen ? "lg:mr-[380px]" : ""}`}>
-                <div className="max-w-3xl mx-auto space-y-6">
+                <div className="max-w-6xl mx-auto space-y-6">
                     {/* ── Document Header ── */}
                     <div className="mb-2 mt-4">
                         <p className="text-[13px] font-bold uppercase tracking-wider text-sage mb-2">
@@ -194,168 +194,171 @@ export default function ResultsPage() {
                         </div>
                     </details>
 
-                    {/* Sticky Navigation for Discharge Summary */}
-                    {isDischargeSummary(result) && (
-                        <nav className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm py-3 px-4 flex gap-6 overflow-x-auto hide-scrollbar text-[13px] font-medium text-gray-600 w-full xl:px-8">
-                            <a href="#summary" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">Summary</a>
-                            {(t?.warningSignsFromDoc ?? result.dischargeSection?.warningSignsFromDoc)?.length > 0 && (
-                                <a href="#warning-signs" className="text-red-600 hover:text-red-700 whitespace-nowrap px-2 py-1 rounded-md hover:bg-red-50 transition-colors">⚠️ Warning Signs</a>
-                            )}
-                            {Array.isArray(result.dischargeSection?.medications) && result.dischargeSection.medications.length > 0 && (
-                                <a href="#medications" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">💊 Medications</a>
-                            )}
-                            {(t?.dailyMonitoring ?? result.dischargeSection?.dailyMonitoring)?.length > 0 && (
-                                <a href="#monitoring" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">📋 Daily Tasks</a>
-                            )}
-                            {((t?.dietInstructions ?? result.dischargeSection?.dietInstructions) || (t?.activityRestrictions ?? result.dischargeSection?.activityRestrictions)) && (
-                                <a href="#diet-activity" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">🍎 Diet & Activity</a>
-                            )}
-                            {(t?.homeCareSteps ?? result.dischargeSection?.homeCareSteps)?.length > 0 && (
-                                <a href="#home-care" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">🏠 Home Care</a>
-                            )}
-                            {Array.isArray(result.dischargeSection?.followUpStructured) && result.dischargeSection.followUpStructured.length > 0 && (
-                                <a href="#appointments" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">📅 Appointments</a>
-                            )}
-                            {Array.isArray(result.labsSection?.labs) && result.labsSection.labs.length > 0 && (
-                                <a href="#labs" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">🧪 Lab Results</a>
-                            )}
-                            {Array.isArray(result.imagingAndProcedures) && result.imagingAndProcedures.length > 0 && (
-                                <a href="#imaging" className="hover:text-navy whitespace-nowrap px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">📷 Imaging</a>
-                            )}
-                        </nav>
-                    )}
-
-                    {/* AI Summary */}
-                    {result && (
-                        <>
-                            <section id="summary" className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm hover:shadow-md transition-shadow">
-                                <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4">Summary</h2>
-                                <p className="text-[15px] leading-relaxed text-gray-800">{summary}</p>
-
-                                {takeaways.length > 0 && (
-                                    <ul className="list-none space-y-2 mt-4 text-[14px] text-gray-600">
-                                        {takeaways.map((k: string, i: number) => (
-                                            <li key={i} className="flex gap-2 items-start">
-                                                <span className="text-sage mt-1">•</span>
-                                                <span className="leading-relaxed">{k}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
+                    <div className="flex flex-col lg:flex-row items-start gap-8 relative mt-8">
+                        {/* Sticky Navigation Sidebar (Desktop) / Topbar (Mobile) */}
+                        {isDischargeSummary(result) && (
+                            <nav className="sticky top-0 lg:top-8 z-40 bg-white lg:bg-transparent border-b lg:border-b-0 lg:border-r border-gray-200 shadow-sm lg:shadow-none py-3 px-4 lg:py-0 lg:pr-6 flex gap-6 lg:gap-3 lg:flex-col overflow-x-auto lg:overflow-visible hide-scrollbar text-[13px] lg:text-[14px] font-medium text-gray-600 w-full lg:w-56 shrink-0 -mx-6 lg:mx-0 w-[calc(100%+3rem)] lg:w-48 xl:w-56">
+                                <a href="#summary" className="hover:text-navy whitespace-nowrap lg:whitespace-normal px-2 py-1.5 lg:px-3 lg:py-2 rounded-md hover:bg-gray-50 transition-colors">Summary</a>
+                                {(t?.warningSignsFromDoc ?? result.dischargeSection?.warningSignsFromDoc)?.length > 0 && (
+                                    <a href="#warning-signs" className="text-red-700 hover:text-red-800 whitespace-nowrap lg:whitespace-normal px-2 py-1.5 lg:px-3 lg:py-2 rounded-md hover:bg-red-50 transition-colors">⚠️ Warning Signs</a>
                                 )}
-                            </section>
+                                {Array.isArray(result.dischargeSection?.medications) && result.dischargeSection.medications.length > 0 && (
+                                    <a href="#medications" className="hover:text-navy whitespace-nowrap lg:whitespace-normal px-2 py-1.5 lg:px-3 lg:py-2 rounded-md hover:bg-gray-50 transition-colors">💊 Medications</a>
+                                )}
+                                {(t?.dailyMonitoring ?? result.dischargeSection?.dailyMonitoring)?.length > 0 && (
+                                    <a href="#monitoring" className="hover:text-navy whitespace-nowrap lg:whitespace-normal px-2 py-1.5 lg:px-3 lg:py-2 rounded-md hover:bg-gray-50 transition-colors">📋 Daily Tasks</a>
+                                )}
+                                {((t?.dietInstructions ?? result.dischargeSection?.dietInstructions) || (t?.activityRestrictions ?? result.dischargeSection?.activityRestrictions)) && (
+                                    <a href="#diet-activity" className="hover:text-navy whitespace-nowrap lg:whitespace-normal px-2 py-1.5 lg:px-3 lg:py-2 rounded-md hover:bg-gray-50 transition-colors">🍎 Diet & Activity</a>
+                                )}
+                                {(t?.homeCareSteps ?? result.dischargeSection?.homeCareSteps)?.length > 0 && (
+                                    <a href="#home-care" className="hover:text-navy whitespace-nowrap lg:whitespace-normal px-2 py-1.5 lg:px-3 lg:py-2 rounded-md hover:bg-gray-50 transition-colors">🏠 Home Care</a>
+                                )}
+                                {Array.isArray(result.dischargeSection?.followUpStructured) && result.dischargeSection.followUpStructured.length > 0 && (
+                                    <a href="#appointments" className="hover:text-navy whitespace-nowrap lg:whitespace-normal px-2 py-1.5 lg:px-3 lg:py-2 rounded-md hover:bg-gray-50 transition-colors">📅 Appointments</a>
+                                )}
+                                {Array.isArray(result.labsSection?.labs) && result.labsSection.labs.length > 0 && (
+                                    <a href="#labs" className="hover:text-navy whitespace-nowrap lg:whitespace-normal px-2 py-1.5 lg:px-3 lg:py-2 rounded-md hover:bg-gray-50 transition-colors">🧪 Lab Results</a>
+                                )}
+                                {Array.isArray(result.imagingAndProcedures) && result.imagingAndProcedures.length > 0 && (
+                                    <a href="#imaging" className="hover:text-navy whitespace-nowrap lg:whitespace-normal px-2 py-1.5 lg:px-3 lg:py-2 rounded-md hover:bg-gray-50 transition-colors">📷 Imaging</a>
+                                )}
+                            </nav>
+                        )}
 
-                            {/* 2. Warning Signs - MOVED UP */}
-                            {isDischargeSummary(result) && result.dischargeSection && (
-                                <section id="warning-signs" className="scroll-mt-24 mb-6">
-                                    <DischargeSummaryLayout result={result} t={t} />
-                                </section>
-                            )}
+                        {/* Main Content Column */}
+                        <div className="flex-1 w-full max-w-3xl mx-auto lg:mx-0">
+                            {/* AI Summary */}
+                            {result && (
+                                <>
+                                    <section id="summary" className="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-sm hover:shadow-md transition-shadow">
+                                        <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4">Summary</h2>
+                                        <p className="text-[15px] leading-relaxed text-gray-800">{summary}</p>
 
-                            {questions.length > 0 && (
-                                <section className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm hover:shadow-md transition-shadow">
-                                    <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4">Questions for your doctor</h2>
-                                    <ul className="list-none space-y-3">
-                                        {questions.map((q: string, i: number) => (
-                                            <li key={i} className="flex gap-3 items-start bg-sand/30 rounded-lg px-4 py-3 border border-gray-100">
-                                                <span className="text-navy font-bold">{i + 1}.</span>
-                                                <span className="text-[14px] text-gray-700">{q}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </section>
-                            )}
-
-                            {/* Labs section (for non-discharge summary or legacy) */}
-                            {result.labsSection?.labs?.length > 0 && !isDischargeSummary(result) && (
-                                <section id="labs" className="mb-8 scroll-mt-24">
-                                    <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4 ml-1">Key Findings</h2>
-                                    <LabsTable
-                                        labs={result.labsSection.labs}
-                                        overallNote={t?.overallLabNote ?? result.labsSection.overallLabNote}
-                                        translatedLabs={t?.labExplanations}
-                                    />
-                                </section>
-                            )}
-
-                            {/* Discharge section */}
-                            {result.dischargeSection && documentType !== "discharge_summary" && (
-                                <section className="border rounded-lg p-4 space-y-4">
-                                    <h2 className="font-medium">Discharge Details</h2>
-
-                                    {(t?.medications ?? result.dischargeSection.medications)?.length > 0 && (
-                                        <div className="pb-2">
-                                            <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-3">Medications</h3>
-                                            <div className="space-y-3">
-                                                {(t?.medications ?? result.dischargeSection.medications).map((m: any, i: number) => (
-                                                    <div key={i} className="bg-white border-l-4 border-navy rounded-r-lg shadow-sm p-4 flex flex-col gap-2">
-                                                        <span className="font-serif text-lg text-navy leading-tight">{m.name}</span>
-                                                        <p className="text-sm text-gray-700">{m.purposePlain}</p>
-                                                        {(m.howToTakeFromDoc || m.timing) && (
-                                                            <div className="text-gray-700 bg-sand/30 p-3 mt-1 rounded text-sm border border-sand">
-                                                                {m.timing && <span className="font-semibold text-navy block mb-1">⏱ {m.timing}</span>}
-                                                                <span>{m.howToTakeFromDoc}</span>
-                                                            </div>
-                                                        )}
-                                                        {m.cautionsGeneral && (
-                                                            <div className="flex gap-2 items-start text-amber-700 bg-amber-50 p-2 rounded text-xs mt-1">
-                                                                <span className="shrink-0">⚠️</span>
-                                                                <p className="leading-snug">{m.cautionsGeneral}</p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {(t?.homeCareSteps ?? result.dischargeSection.homeCareSteps)?.length > 0 && (
-                                        <div>
-                                            <h3 className="text-sm font-medium text-gray-700 mb-1">Home Care</h3>
-                                            <ul className="list-disc ml-5 text-sm">
-                                                {(t?.homeCareSteps ?? result.dischargeSection.homeCareSteps).map((s: string, i: number) => (
-                                                    <li key={i}>{s}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
-
-                                    {(t?.followUp ?? result.dischargeSection.followUp)?.length > 0 && (
-                                        <div>
-                                            <h3 className="text-sm font-medium text-gray-700 mb-1">Follow Up</h3>
-                                            <ul className="list-disc ml-5 text-sm">
-                                                {(t?.followUp ?? result.dischargeSection.followUp).map((s: string, i: number) => (
-                                                    <li key={i}>{s}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
-
-                                    {(t?.warningSignsFromDoc ?? result.dischargeSection.warningSignsFromDoc)?.length > 0 && (
-                                        <div>
-                                            <h3 className="text-sm font-medium text-red-700 mb-1">Warning Signs</h3>
-                                            <ul className="list-disc ml-5 text-sm text-red-800">
-                                                {(t?.warningSignsFromDoc ?? result.dischargeSection.warningSignsFromDoc).map((s: { symptom: string, action: string }, i: number) => (
-                                                    <li key={i}>
-                                                        <span className="font-semibold">{s.symptom}</span> {" -> "} {s.action}
+                                        {takeaways.length > 0 && (
+                                            <ul className="list-none space-y-2 mt-4 text-[14px] text-gray-600">
+                                                {takeaways.map((k: string, i: number) => (
+                                                    <li key={i} className="flex gap-2 items-start">
+                                                        <span className="text-sage mt-1">•</span>
+                                                        <span className="leading-relaxed">{k}</span>
                                                     </li>
                                                 ))}
                                             </ul>
-                                        </div>
+                                        )}
+                                    </section>
+
+                                    {/* Sub-sections */}
+                                    {isDischargeSummary(result) && result.dischargeSection && (
+                                        <section id="warning-signs" className="scroll-mt-24 mb-6">
+                                            <DischargeSummaryLayout result={result} t={t} />
+                                        </section>
                                     )}
-                                </section>
+
+                                    {questions.length > 0 && (
+                                        <section className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm hover:shadow-md transition-shadow">
+                                            <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4">Questions for your doctor</h2>
+                                            <ul className="list-none space-y-3">
+                                                {questions.map((q: string, i: number) => (
+                                                    <li key={i} className="flex gap-3 items-start bg-sand/30 rounded-lg px-4 py-3 border border-gray-100">
+                                                        <span className="text-navy font-bold">{i + 1}.</span>
+                                                        <span className="text-[14px] text-gray-700">{q}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </section>
+                                    )}
+
+                                    {/* Labs section (for non-discharge summary or legacy) */}
+                                    {result.labsSection?.labs?.length > 0 && !isDischargeSummary(result) && (
+                                        <section id="labs" className="mb-8 scroll-mt-24">
+                                            <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4 ml-1">Key Findings</h2>
+                                            <LabsTable
+                                                labs={result.labsSection.labs}
+                                                overallNote={t?.overallLabNote ?? result.labsSection.overallLabNote}
+                                                translatedLabs={t?.labExplanations}
+                                            />
+                                        </section>
+                                    )}
+
+                                    {/* Discharge section */}
+                                    {result.dischargeSection && documentType !== "discharge_summary" && (
+                                        <section className="border rounded-lg p-4 space-y-4">
+                                            <h2 className="font-medium">Discharge Details</h2>
+
+                                            {(t?.medications ?? result.dischargeSection.medications)?.length > 0 && (
+                                                <div className="pb-2">
+                                                    <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-3">Medications</h3>
+                                                    <div className="space-y-3">
+                                                        {(t?.medications ?? result.dischargeSection.medications).map((m: any, i: number) => (
+                                                            <div key={i} className="bg-white border-l-4 border-navy rounded-r-lg shadow-sm p-4 flex flex-col gap-2">
+                                                                <span className="font-serif text-lg text-navy leading-tight">{m.name}</span>
+                                                                <p className="text-sm text-gray-700">{m.purposePlain}</p>
+                                                                {(m.howToTakeFromDoc || m.timing) && (
+                                                                    <div className="text-gray-700 bg-sand/30 p-3 mt-1 rounded text-sm border border-sand">
+                                                                        {m.timing && <span className="font-semibold text-navy block mb-1">⏱ {m.timing}</span>}
+                                                                        <span>{m.howToTakeFromDoc}</span>
+                                                                    </div>
+                                                                )}
+                                                                {m.cautionsGeneral && (
+                                                                    <div className="flex gap-2 items-start text-amber-700 bg-amber-50 p-2 rounded text-xs mt-1">
+                                                                        <span className="shrink-0">⚠️</span>
+                                                                        <p className="leading-snug">{m.cautionsGeneral}</p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {(t?.homeCareSteps ?? result.dischargeSection.homeCareSteps)?.length > 0 && (
+                                                <div>
+                                                    <h3 className="text-sm font-medium text-gray-700 mb-1">Home Care</h3>
+                                                    <ul className="list-disc ml-5 text-sm">
+                                                        {(t?.homeCareSteps ?? result.dischargeSection.homeCareSteps).map((s: string, i: number) => (
+                                                            <li key={i}>{s}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+
+                                            {(t?.followUp ?? result.dischargeSection.followUp)?.length > 0 && (
+                                                <div>
+                                                    <h3 className="text-sm font-medium text-gray-700 mb-1">Follow Up</h3>
+                                                    <ul className="list-disc ml-5 text-sm">
+                                                        {(t?.followUp ?? result.dischargeSection.followUp).map((s: string, i: number) => (
+                                                            <li key={i}>{s}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+
+                                            {(t?.warningSignsFromDoc ?? result.dischargeSection.warningSignsFromDoc)?.length > 0 && (
+                                                <div>
+                                                    <h3 className="text-sm font-medium text-red-700 mb-1">Warning Signs</h3>
+                                                    <ul className="list-disc ml-5 text-sm text-red-800">
+                                                        {(t?.warningSignsFromDoc ?? result.dischargeSection.warningSignsFromDoc).map((s: { symptom: string, action: string }, i: number) => (
+                                                            <li key={i}>
+                                                                <span className="font-semibold">{s.symptom}</span> {" -> "} {s.action}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </section>
+                                    )}
+                                </>
                             )}
-                        </>
-                    )}
 
-                    <div className="text-center pb-8">
-                        <Link href="/" className="text-sm text-gray-600">
-                            Back to Home
-                        </Link>
-                    </div>
-                </div>
-            </main>
-
-            {/* Right: Sticky Chat Sidebar */}
+                            <div className="text-center pb-8 mt-8">
+                                <Link href="/" className="text-sm text-gray-600">
+                                    Back to Home
+                                </Link>
+                            </div>
+                        </div> {/* End Main Content Column */}
+                    </div> {/* End lg:flex-row Container */}
+                </div> {/* End max-w-6xl Container */}
+            </main>                    {/* Right: Sticky Chat Sidebar */}
             {result && (
                 <>
                     {/* Toggle button — visible when chat is closed */}
