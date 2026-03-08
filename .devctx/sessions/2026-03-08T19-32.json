@@ -1,0 +1,26 @@
+{
+  "id": "ad017de5-aaae-44c5-a47d-4cf1c2fa7fe4",
+  "timestamp": "2026-03-08T19:32:52.693Z",
+  "branch": "addon",
+  "repo": "medlablingo",
+  "author": "vedmukul",
+  "task": "Auto-saved on commit: feat: add Calendar Export, Supabase persistence, Lab Timelines & History page",
+  "approaches": [],
+  "decisions": [],
+  "currentState": "Auto-saved on commit: feat: add Calendar Export, Supabase persistence, Lab Timelines & History page",
+  "nextSteps": [],
+  "filesChanged": [
+    ".claude/worktrees/cranky-easley",
+    ".devctx/branches/addon.json",
+    ".devctx/sessions/2026-03-01T01-51.json",
+    ".devctx/sessions/2026-03-01T02-05.json"
+  ],
+  "filesStaged": [],
+  "recentCommits": [
+    "c122f32 feat: add Calendar Export, Supabase persistence, Lab Timelines & History page",
+    "a376e4d feat: restructure results page for desktop-first layout",
+    "15a1915 chore: track devctx local state",
+    "e8ef861 chore: share DevContext with team",
+    "d985353 chore: update next.js to patch CVE-2025-66478 Vercel vulnerability"
+  ]
+}

@@ -159,5 +159,224 @@
       "1115ef4 Fix sticky navigation anchor tags by passing IDs to nested sections",
       "6477ca1 Comprehensive fixes for Discharge Summary UI and Data Handling, refine LLM extraction rules, and ensure correct conditional rendering of Labs and Imaging."
     ]
+  },
+  {
+    "id": "3ef9f767-1a8d-40f0-8ca0-6dbb2ecab498",
+    "timestamp": "2026-03-01T01:51:37.931Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: chore: track devctx local state",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: chore: track devctx local state",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "15a1915 chore: track devctx local state",
+      "e8ef861 chore: share DevContext with team",
+      "d985353 chore: update next.js to patch CVE-2025-66478 Vercel vulnerability",
+      "db16976 Save current state and context",
+      "1115ef4 Fix sticky navigation anchor tags by passing IDs to nested sections"
+    ]
+  },
+  {
+    "id": "9ff5a846-6104-4c50-b968-9474672d8f5a",
+    "timestamp": "2026-03-01T02:05:39.763Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: feat: restructure results page for desktop-first layout",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: feat: restructure results page for desktop-first layout",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley",
+      ".devctx/branches/addon.json",
+      ".devctx/sessions/2026-03-01T01-51.json"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "a376e4d feat: restructure results page for desktop-first layout",
+      "15a1915 chore: track devctx local state",
+      "e8ef861 chore: share DevContext with team",
+      "d985353 chore: update next.js to patch CVE-2025-66478 Vercel vulnerability",
+      "db16976 Save current state and context"
+    ]
+  },
+  {
+    "id": "ad017de5-aaae-44c5-a47d-4cf1c2fa7fe4",
+    "timestamp": "2026-03-08T19:32:52.693Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: feat: add Calendar Export, Supabase persistence, Lab Timelines & History page",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: feat: add Calendar Export, Supabase persistence, Lab Timelines & History page",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley",
+      ".devctx/branches/addon.json",
+      ".devctx/sessions/2026-03-01T01-51.json",
+      ".devctx/sessions/2026-03-01T02-05.json"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "c122f32 feat: add Calendar Export, Supabase persistence, Lab Timelines & History page",
+      "a376e4d feat: restructure results page for desktop-first layout",
+      "15a1915 chore: track devctx local state",
+      "e8ef861 chore: share DevContext with team",
+      "d985353 chore: update next.js to patch CVE-2025-66478 Vercel vulnerability"
+    ]
+  },
+  {
+    "id": "b6409767-31a6-4766-aa87-b476890c0deb",
+    "timestamp": "2026-03-08T19:50:35.963Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: feat: switch calendar export to direct Google Calendar links",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: feat: switch calendar export to direct Google Calendar links",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley",
+      ".devctx/branches/addon.json",
+      ".devctx/sessions/2026-03-01T01-51.json",
+      ".devctx/sessions/2026-03-01T02-05.json",
+      ".devctx/sessions/2026-03-08T19-32.json"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "b5a2758 feat: switch calendar export to direct Google Calendar links",
+      "c122f32 feat: add Calendar Export, Supabase persistence, Lab Timelines & History page",
+      "a376e4d feat: restructure results page for desktop-first layout",
+      "15a1915 chore: track devctx local state",
+      "e8ef861 chore: share DevContext with team"
+    ]
+  },
+  {
+    "id": "9a51701c-1234-43a6-8864-4563c337448e",
+    "timestamp": "2026-03-08T19:54:00.416Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: feat: per-dose Google Calendar events with proper timing labels",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: feat: per-dose Google Calendar events with proper timing labels",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley",
+      ".devctx/branches/addon.json",
+      ".devctx/sessions/2026-03-01T01-51.json",
+      ".devctx/sessions/2026-03-01T02-05.json",
+      ".devctx/sessions/2026-03-08T19-32.json",
+      ".devctx/sessions/2026-03-08T19-50.json"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "63a935a feat: per-dose Google Calendar events with proper timing labels",
+      "b5a2758 feat: switch calendar export to direct Google Calendar links",
+      "c122f32 feat: add Calendar Export, Supabase persistence, Lab Timelines & History page",
+      "a376e4d feat: restructure results page for desktop-first layout",
+      "15a1915 chore: track devctx local state"
+    ]
+  },
+  {
+    "id": "500e1ba8-1013-4ae4-8e58-b89e9d9a0f0e",
+    "timestamp": "2026-03-08T20:02:25.038Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: refactor: declutter results page — compact actions bar with dropdown, sidebar utility info",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: refactor: declutter results page — compact actions bar with dropdown, sidebar utility info",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley",
+      ".devctx/branches/addon.json",
+      ".devctx/sessions/2026-03-01T01-51.json",
+      ".devctx/sessions/2026-03-01T02-05.json",
+      ".devctx/sessions/2026-03-08T19-32.json",
+      ".devctx/sessions/2026-03-08T19-50.json",
+      ".devctx/sessions/2026-03-08T19-54.json"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "08e2048 refactor: declutter results page — compact actions bar with dropdown, sidebar utility info",
+      "63a935a feat: per-dose Google Calendar events with proper timing labels",
+      "b5a2758 feat: switch calendar export to direct Google Calendar links",
+      "c122f32 feat: add Calendar Export, Supabase persistence, Lab Timelines & History page",
+      "a376e4d feat: restructure results page for desktop-first layout"
+    ]
+  },
+  {
+    "id": "b5f51d07-1fad-45f0-a64e-e4ca5fb3f69a",
+    "timestamp": "2026-03-08T20:21:22.420Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: feat: clinical calm redesign — progressive disclosure, grouped sidebar, overlay chat, warm aesthetics",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: feat: clinical calm redesign — progressive disclosure, grouped sidebar, overlay chat, warm aesthetics",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley",
+      ".devctx/branches/addon.json",
+      ".devctx/sessions/2026-03-01T01-51.json",
+      ".devctx/sessions/2026-03-01T02-05.json",
+      ".devctx/sessions/2026-03-08T19-32.json",
+      ".devctx/sessions/2026-03-08T19-50.json",
+      ".devctx/sessions/2026-03-08T19-54.json",
+      ".devctx/sessions/2026-03-08T20-02.json"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "47d6fc8 feat: clinical calm redesign — progressive disclosure, grouped sidebar, overlay chat, warm aesthetics",
+      "08e2048 refactor: declutter results page — compact actions bar with dropdown, sidebar utility info",
+      "63a935a feat: per-dose Google Calendar events with proper timing labels",
+      "b5a2758 feat: switch calendar export to direct Google Calendar links",
+      "c122f32 feat: add Calendar Export, Supabase persistence, Lab Timelines & History page"
+    ]
+  },
+  {
+    "id": "0e5a5413-11c2-4400-b900-50d3ccd9b50b",
+    "timestamp": "2026-03-08T20:35:38.495Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Auto-saved on commit: fix: wrap useSearchParams in Suspense boundary for Vercel build",
+    "approaches": [],
+    "decisions": [],
+    "currentState": "Auto-saved on commit: fix: wrap useSearchParams in Suspense boundary for Vercel build",
+    "nextSteps": [],
+    "filesChanged": [
+      ".claude/worktrees/cranky-easley",
+      ".devctx/branches/addon.json",
+      ".devctx/sessions/2026-03-01T01-51.json",
+      ".devctx/sessions/2026-03-01T02-05.json",
+      ".devctx/sessions/2026-03-08T19-32.json",
+      ".devctx/sessions/2026-03-08T19-50.json",
+      ".devctx/sessions/2026-03-08T19-54.json",
+      ".devctx/sessions/2026-03-08T20-02.json",
+      ".devctx/sessions/2026-03-08T20-21.json"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+      "f328a12 fix: wrap useSearchParams in Suspense boundary for Vercel build",
+      "47d6fc8 feat: clinical calm redesign — progressive disclosure, grouped sidebar, overlay chat, warm aesthetics",
+      "08e2048 refactor: declutter results page — compact actions bar with dropdown, sidebar utility info",
+      "63a935a feat: per-dose Google Calendar events with proper timing labels",
+      "b5a2758 feat: switch calendar export to direct Google Calendar links"
+    ]
   }
 ]

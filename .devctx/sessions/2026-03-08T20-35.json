@@ -1,0 +1,31 @@
+{
+  "id": "0e5a5413-11c2-4400-b900-50d3ccd9b50b",
+  "timestamp": "2026-03-08T20:35:38.495Z",
+  "branch": "addon",
+  "repo": "medlablingo",
+  "author": "vedmukul",
+  "task": "Auto-saved on commit: fix: wrap useSearchParams in Suspense boundary for Vercel build",
+  "approaches": [],
+  "decisions": [],
+  "currentState": "Auto-saved on commit: fix: wrap useSearchParams in Suspense boundary for Vercel build",
+  "nextSteps": [],
+  "filesChanged": [
+    ".claude/worktrees/cranky-easley",
+    ".devctx/branches/addon.json",
+    ".devctx/sessions/2026-03-01T01-51.json",
+    ".devctx/sessions/2026-03-01T02-05.json",
+    ".devctx/sessions/2026-03-08T19-32.json",
+    ".devctx/sessions/2026-03-08T19-50.json",
+    ".devctx/sessions/2026-03-08T19-54.json",
+    ".devctx/sessions/2026-03-08T20-02.json",
+    ".devctx/sessions/2026-03-08T20-21.json"
+  ],
+  "filesStaged": [],
+  "recentCommits": [
+    "f328a12 fix: wrap useSearchParams in Suspense boundary for Vercel build",
+    "47d6fc8 feat: clinical calm redesign — progressive disclosure, grouped sidebar, overlay chat, warm aesthetics",
+    "08e2048 refactor: declutter results page — compact actions bar with dropdown, sidebar utility info",
+    "63a935a feat: per-dose Google Calendar events with proper timing labels",
+    "b5a2758 feat: switch calendar export to direct Google Calendar links"
+  ]
+}

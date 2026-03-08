@@ -1,0 +1,66 @@
+{
+    "id": "d5e7a1c3-8f9b-4e2d-b6a4-91c03f2e8d7a",
+    "timestamp": "2026-03-08T20:46:14.000Z",
+    "branch": "addon",
+    "repo": "medlablingo",
+    "author": "vedmukul",
+    "task": "Session: Calendar Export, Supabase Persistence, Lab Timelines, and Clinical Calm Redesign",
+    "approaches": [
+        "Supabase for persistent data storage (dual-write with localStorage fallback)",
+        "Anonymous device IDs (no auth) for Row-Level Security",
+        "Google Calendar URL API for direct calendar links (no .ics downloads)",
+        "Progressive disclosure with 3-tier collapsible sections",
+        "Clinical calm aesthetic with warm neutral palette"
+    ],
+    "decisions": [
+        "Used Supabase instead of extending localStorage TTL for persistent history",
+        "Google Calendar direct links instead of .ics file downloads",
+        "Per-dose calendar events — each medication timing slot gets its own event",
+        "3-tier progressive disclosure: Summary+Warnings always visible, Meds/Tasks/Appointments collapsed with preview, Labs/Imaging/Vaccines compact accordion",
+        "Warm amber accent for warning signs instead of aggressive red",
+        "Overlay chat drawer with backdrop instead of content-pushing sidebar",
+        "Questions mini-card floated near top of page, not buried at bottom",
+        "Merged addon into main for Vercel production deployment at medlablingo.vercel.app"
+    ],
+    "currentState": "Clinical calm redesign complete. All features built, tested, and deployed. Results page has progressive disclosure, grouped sidebar (ESSENTIALS/DAILY CARE/RECORDS), overlay chat, warm aesthetics. Calendar export uses direct Google Calendar URLs. Supabase persistence active with anonymous device tracking. History page at /history with lab sparkline charts.",
+    "nextSteps": [
+        "Upload real NICU discharge summary to test full progressive disclosure flow",
+        "Verify Supabase data persistence across browser sessions",
+        "Add unit tests for generateICS calendar utilities",
+        "Consider adding Apple Calendar / Outlook calendar URL support alongside Google",
+        "Potentially add lazy rendering for below-fold sections via Intersection Observer",
+        "Review mobile responsiveness of the redesigned results page"
+    ],
+    "filesChanged": [
+        "tailwind.config.ts",
+        "src/app/results/page.tsx",
+        "src/app/history/page.tsx",
+        "src/components/results/CollapsibleSection.tsx",
+        "src/components/results/DischargeSummaryLayout.tsx",
+        "src/components/results/WarningSigns.tsx",
+        "src/components/results/Immunizations.tsx",
+        "src/components/results/FollowUpAppointments.tsx",
+        "src/components/LabsTable.tsx",
+        "src/components/LabSparkline.tsx",
+        "src/lib/calendar/generateICS.ts",
+        "src/lib/persistence/analysisStorage.ts",
+        "src/lib/supabase/supabaseClient.ts",
+        "src/lib/supabase/deviceId.ts",
+        "supabase_migration.sql",
+        "package.json"
+    ],
+    "filesStaged": [],
+    "recentCommits": [
+        "f328a12 fix: wrap useSearchParams in Suspense boundary for Vercel build",
+        "47d6fc8 feat: clinical calm redesign — progressive disclosure, grouped sidebar, overlay chat, warm aesthetics",
+        "08e2048 refactor: declutter results page — compact actions bar with dropdown, sidebar utility info",
+        "63a935a feat: per-dose Google Calendar events with proper timing labels",
+        "b5a2758 feat: switch calendar export to direct Google Calendar links",
+        "c122f32 feat: add Calendar Export, Supabase persistence, Lab Timelines & History page"
+    ],
+    "environmentNotes": [
+        "Supabase env vars added to .env.local (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY)",
+        "supabase_migration.sql run in Supabase SQL Editor to create analyses table",
+        "addon branch merged into main for Vercel production deployment"
+    ]
+}
