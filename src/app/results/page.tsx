@@ -1,7 +1,7 @@
 // src/app/results/page.tsx
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
@@ -13,6 +13,18 @@ import { clearAnalysis, loadAnalysis, loadHistory } from "@/lib/persistence/anal
 import { isDischargeSummary } from "@/contracts/analysisSchema";
 
 export default function ResultsPage() {
+    return (
+        <Suspense fallback={
+            <main className="min-h-screen bg-warmBase flex items-center justify-center p-6">
+                <div className="text-gray-400 text-sm">Loading your results...</div>
+            </main>
+        }>
+            <ResultsContent />
+        </Suspense>
+    );
+}
+
+function ResultsContent() {
     const [data, setData] = useState<ReturnType<typeof loadAnalysis>>(null);
     const [error, setError] = useState<string | null>(null);
     const [translated, setTranslated] = useState<Record<string, any> | null>(null);
