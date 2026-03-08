@@ -57,8 +57,8 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                             }}
                             className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white bg-navy hover:bg-navy-light px-3.5 py-2 rounded-lg transition-colors shadow-sm"
                         >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            Export All to Calendar
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.5 22h-15A2.5 2.5 0 0 1 2 19.5v-15A2.5 2.5 0 0 1 4.5 2H8v2H4.5a.5.5 0 0 0-.5.5v15a.5.5 0 0 0 .5.5h15a.5.5 0 0 0 .5-.5V16h2v3.5a2.5 2.5 0 0 1-2.5 2.5zM8 7V3h8v4H8zm10-4h2v4h-2V3zM6 3h0V3zm0 8h12v2H6v-2zm0 4h8v2H6v-2z" /></svg>
+                            Add to Google Calendar
                         </button>
                     </div>
                     <div className="space-y-4">

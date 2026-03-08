@@ -41,8 +41,8 @@ export function FollowUpAppointments({ appointments }: { appointments: any[] }) 
                                         onClick={() => handleAddToCalendar(appt)}
                                         className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold text-navy bg-sand hover:bg-sand/80 px-3 py-1.5 rounded-lg transition-colors"
                                     >
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-                                        Add to Calendar
+                                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.5 22h-15A2.5 2.5 0 0 1 2 19.5v-15A2.5 2.5 0 0 1 4.5 2H8v2H4.5a.5.5 0 0 0-.5.5v15a.5.5 0 0 0 .5.5h15a.5.5 0 0 0 .5-.5V16h2v3.5a2.5 2.5 0 0 1-2.5 2.5zM8 7V3h8v4H8zm10-4h2v4h-2V3zM6 3h0V3zm0 8h12v2H6v-2zm0 4h8v2H6v-2z" /></svg>
+                                        Add to Google Calendar
                                     </button>
                                 </div>
                             </div>
