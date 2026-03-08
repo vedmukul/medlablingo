@@ -12,7 +12,7 @@ const config: Config = {
                 background: "var(--background)",
                 foreground: "var(--foreground)",
                 navy: {
-                    DEFAULT: "#1a2744",
+                    DEFAULT: "#1B2A4A",
                     light: "#2d3f5e",
                 },
                 sand: {
@@ -28,6 +28,11 @@ const config: Config = {
                     light: "#fef3e2",
                 },
                 warmWhite: "#faf9f6",
+                warmBase: "#FAFAF8",
+                teal: {
+                    DEFAULT: "#4a9e8e",
+                    light: "#e6f5f1",
+                },
                 customRed: {
                     DEFAULT: "#c2453e",
                     light: "#fde8e7",
@@ -36,6 +41,20 @@ const config: Config = {
             fontFamily: {
                 sans: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
                 serif: ['var(--font-dm-serif)', 'Georgia', 'serif'],
+            },
+            keyframes: {
+                'expand': {
+                    from: { gridTemplateRows: '0fr' },
+                    to: { gridTemplateRows: '1fr' },
+                },
+                'collapse': {
+                    from: { gridTemplateRows: '1fr' },
+                    to: { gridTemplateRows: '0fr' },
+                },
+            },
+            animation: {
+                'expand': 'expand 0.25s ease-out forwards',
+                'collapse': 'collapse 0.2s ease-in forwards',
             },
         },
     },

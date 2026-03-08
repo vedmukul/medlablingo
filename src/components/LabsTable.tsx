@@ -147,12 +147,7 @@ export function LabsTable({ labs, overallNote, translatedLabs }: LabsTableProps)
             );
 
             if (previousEntries.length === 0) {
-                // No previous data
-                trendMap.set(lab.name, {
-                    direction: '—',
-                    previousValue: null,
-                    delta: null,
-                });
+                // No previous data — show nothing
                 return;
             }
 
@@ -183,12 +178,8 @@ export function LabsTable({ labs, overallNote, translatedLabs }: LabsTableProps)
                     delta,
                 });
             } else {
-                // Non-numeric values
-                trendMap.set(lab.name, {
-                    direction: '—',
-                    previousValue: previous.value,
-                    delta: null,
-                });
+                // Non-numeric values — show nothing
+                return;
             }
         });
 
@@ -375,11 +366,11 @@ export function LabsTable({ labs, overallNote, translatedLabs }: LabsTableProps)
                                 <span className="font-semibold text-gray-900">
                                     {lab.value}{lab.unit ? ` ${lab.unit}` : ''}
                                 </span>
-                                {trend && trend.direction !== '—' && (
-                                    <span className={`ml-2 ${getTrendColor(trend.direction, lab.flag)}`}>
+                                {trend && trend.direction !== '—' && trend.direction !== '→' && (
+                                    <span className={`ml-2 text-[13px] ${getTrendColor(trend.direction, lab.flag)}`}>
                                         {trend.direction}
-                                        {trend.delta !== null && (
-                                            <span className="text-xs ml-1">
+                                        {trend.delta !== null && Math.abs(trend.delta) >= 0.01 && (
+                                            <span className="text-xs ml-0.5 opacity-70">
                                                 {formatDelta(trend.delta)}
                                             </span>
                                         )}

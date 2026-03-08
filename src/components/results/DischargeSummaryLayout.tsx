@@ -10,40 +10,61 @@ import { Immunizations } from './Immunizations';
 import { NeonatalSection } from './NeonatalSection';
 import { GeneralInstructions } from './GeneralInstructions';
 import { LabsTable } from '../LabsTable';
+import { CollapsibleSection } from './CollapsibleSection';
 import { openGoogleCalendarMeds } from '@/lib/calendar/generateICS';
 
 export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) {
     const ds = result.dischargeSection || {};
 
-    // Safety fallback
     if (!ds) return null;
 
     const meds = t?.medications ?? ds.medications ?? [];
     const stoppedMeds = result.discontinuedMedications ?? [];
     const imaging = result.imagingAndProcedures ?? [];
-    const followUp = ds.followUpStructured?.length > 0 ? ds.followUpStructured : (t?.followUp ?? ds.followUp)?.map((f: string) => ({ specialty: "Follow-up", purpose: f }));
+    const followUp = ds.followUpStructured?.length > 0
+        ? ds.followUpStructured
+        : (t?.followUp ?? ds.followUp)?.map((f: string) => ({ specialty: "Follow-up", purpose: f }));
 
     const warningSigns = t?.warningSignsFromDoc ?? ds.warningSignsFromDoc ?? [];
     const generalRedFlags = t?.generalRedFlags ?? ds.generalRedFlags ?? [];
     const allWarnings = [...warningSigns, ...generalRedFlags];
 
-    // Build general instructions array
+    const monitoring = t?.dailyMonitoring ?? ds.dailyMonitoring ?? [];
+    const homeCareSteps = t?.homeCareSteps ?? ds.homeCareSteps ?? [];
+    const labs = result.labsSection?.labs ?? [];
+    const immunizations = result.immunizations ?? [];
+    const urgentAppts = (followUp ?? []).filter((a: any) => a.urgency === 'critical').length;
+
     const generalSections = [
-        { title: "Home Care Steps", content: t?.homeCareSteps ?? ds.homeCareSteps, icon: "🏠" },
+        { title: "Home Care Steps", content: homeCareSteps, icon: "🏠" },
         { title: "Wound & Incision Care", content: ds.woundCare, icon: "🩹" },
         { title: "Respiratory Precautions", content: ds.respiratoryPrecautions, icon: "🫁" },
     ];
 
     return (
         <div className="space-y-6">
-            <h2 className="text-[12px] font-bold uppercase tracking-widest text-navy bg-sand px-3 py-1.5 rounded inline-block mb-2">Discharge Summary Details</h2>
 
-            <WarningSigns signs={allWarnings} />
+            {/* ═══ TIER 1: Always visible ═══ */}
 
+            {/* Warning Signs — always visible, warm amber accent */}
+            {allWarnings.length > 0 && (
+                <WarningSigns signs={allWarnings} />
+            )}
+
+            {/* ═══ TIER 2: Collapsed with preview ═══ */}
+
+            {/* Medications */}
             {meds.length > 0 && (
-                <div id="medications" className="scroll-mt-24 pt-2 pb-4">
+                <CollapsibleSection
+                    id="medications"
+                    title="Medications"
+                    icon="💊"
+                    count={meds.length}
+                    preview={meds.slice(0, 2).map((m: any) => m.name).join(", ")}
+                    accentColor="border-teal"
+                >
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 ml-1">Current Medications</h3>
+                        <span className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider">Current Medications</span>
                         <button
                             onClick={() => {
                                 openGoogleCalendarMeds(
@@ -55,83 +76,166 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                                     }))
                                 );
                             }}
-                            className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white bg-navy hover:bg-navy-light px-3.5 py-2 rounded-lg transition-colors shadow-sm"
+                            className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-navy bg-sand hover:bg-sand-dark px-3 py-1.5 rounded-lg transition-colors"
                         >
-                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.5 22h-15A2.5 2.5 0 0 1 2 19.5v-15A2.5 2.5 0 0 1 4.5 2H8v2H4.5a.5.5 0 0 0-.5.5v15a.5.5 0 0 0 .5.5h15a.5.5 0 0 0 .5-.5V16h2v3.5a2.5 2.5 0 0 1-2.5 2.5zM8 7V3h8v4H8zm10-4h2v4h-2V3zM6 3h0V3zm0 8h12v2H6v-2zm0 4h8v2H6v-2z" /></svg>
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M19.5 22h-15A2.5 2.5 0 0 1 2 19.5v-15A2.5 2.5 0 0 1 4.5 2H8v2H4.5a.5.5 0 0 0-.5.5v15a.5.5 0 0 0 .5.5h15a.5.5 0 0 0 .5-.5V16h2v3.5a2.5 2.5 0 0 1-2.5 2.5zM8 7V3h8v4H8zm10-4h2v4h-2V3zM6 3h0V3zm0 8h12v2H6v-2zm0 4h8v2H6v-2z" /></svg>
                             Add to Google Calendar
                         </button>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {meds.map((m: any, i: number) => (
-                            <div key={i} className="bg-white border-l-4 border-navy rounded-r-xl shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col gap-2">
+                            <div key={i} className="bg-warmBase rounded-lg p-4 flex flex-col gap-1.5">
                                 <div className="flex justify-between items-start">
-                                    <span className="font-serif text-xl text-navy leading-tight">{m.name}</span>
-                                    {m.timing && <span className="bg-sand text-navy font-bold text-xs uppercase px-2 py-1 rounded whitespace-nowrap ml-4">⏱ {m.timing}</span>}
+                                    <span className="font-semibold text-[15px] text-navy leading-tight">{m.name}</span>
+                                    {m.timing && <span className="bg-teal-light text-teal font-semibold text-[11px] px-2 py-0.5 rounded whitespace-nowrap ml-3">{m.timing}</span>}
                                 </div>
-                                <p className="text-[15px] text-gray-700">{m.purposePlain || m.purpose}</p>
+                                <p className="text-[14px] text-gray-600">{m.purposePlain || m.purpose}</p>
                                 {m.howToTakeFromDoc && (
-                                    <div className="text-navy bg-sand/30 p-3 mt-2 rounded bg-opacity-50 text-[14px] font-medium border border-sand">
-                                        👉 {m.howToTakeFromDoc}
-                                    </div>
+                                    <p className="text-[13px] text-navy bg-white p-2.5 rounded mt-1 border border-gray-100 leading-snug">
+                                        {m.howToTakeFromDoc}
+                                    </p>
                                 )}
                                 {m.cautionsGeneral && (
-                                    <div className="flex gap-2 items-start text-amber-900 bg-amber-50 p-3 rounded-lg text-[13px] mt-2 border border-amber-100">
-                                        <span className="shrink-0">⚠️</span>
+                                    <div className="flex gap-2 items-start text-amber bg-amber-light/60 p-2.5 rounded text-[12px] mt-1">
+                                        <span className="shrink-0">⚠</span>
                                         <p className="leading-snug">{m.cautionsGeneral}</p>
                                     </div>
                                 )}
                             </div>
                         ))}
                     </div>
-                </div>
+                </CollapsibleSection>
             )}
 
-            <DiscontinuedMedsCard meds={stoppedMeds} />
+            {stoppedMeds.length > 0 && (
+                <CollapsibleSection
+                    title="Discontinued Medications"
+                    icon="🚫"
+                    count={stoppedMeds.length}
+                    accentColor="border-gray-300"
+                >
+                    <DiscontinuedMedsCard meds={stoppedMeds} />
+                </CollapsibleSection>
+            )}
 
-            <div id="appointments" className="scroll-mt-24">
-                <FollowUpAppointments appointments={followUp} />
-            </div>
+            {/* Follow-up Appointments */}
+            {followUp?.length > 0 && (
+                <CollapsibleSection
+                    id="appointments"
+                    title="Follow-up Appointments"
+                    icon="📅"
+                    count={followUp.length}
+                    urgentCount={urgentAppts}
+                    preview={followUp.slice(0, 2).map((a: any) => a.specialty).join(", ")}
+                    accentColor="border-navy"
+                >
+                    <FollowUpAppointments appointments={followUp} />
+                </CollapsibleSection>
+            )}
 
-            <div id="diet-activity" className="scroll-mt-24 grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                <DietCard diet={ds.dietInstructions} />
-                <ActivityCard activityRestrictions={ds.activityRestrictions} />
-            </div>
+            {/* Daily Monitoring */}
+            {monitoring.length > 0 && (
+                <CollapsibleSection
+                    id="monitoring"
+                    title="Daily Monitoring Checklist"
+                    icon="📋"
+                    count={monitoring.length}
+                    preview="Temperature, feeding, diaper tracking..."
+                    accentColor="border-sage"
+                >
+                    <DailyMonitoring monitoring={monitoring} />
+                </CollapsibleSection>
+            )}
 
-            <div id="monitoring" className="scroll-mt-24">
-                <DailyMonitoring monitoring={ds.dailyMonitoring} />
-            </div>
-
-            <div id="home-care" className="scroll-mt-24">
-                <GeneralInstructions sections={generalSections} />
-            </div>
-
-            <NeonatalSection
-                feedingPlan={ds.feedingPlan}
-                safeSleep={ds.safeSleepInstructions}
-                development={ds.developmentalGuidance}
-                birthHistory={result.birthHistory}
-            />
-
-            {/* Labs Section */}
-            {result.labsSection?.labs?.length > 0 && (
-                <div id="labs" className="scroll-mt-24 pt-2">
-                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4 ml-1">Key Findings</h3>
-                    <div className="mb-6">
-                        <LabsTable
-                            labs={result.labsSection.labs}
-                            overallNote={t?.overallLabNote ?? result.labsSection.overallLabNote}
-                            translatedLabs={t?.labExplanations}
-                        />
+            {/* Diet & Activity */}
+            {(ds.dietInstructions || ds.activityRestrictions) && (
+                <CollapsibleSection
+                    id="diet-activity"
+                    title="Diet & Activity"
+                    icon="🍎"
+                    accentColor="border-sage"
+                >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <DietCard diet={ds.dietInstructions} />
+                        <ActivityCard activityRestrictions={ds.activityRestrictions} />
                     </div>
-                </div>
+                </CollapsibleSection>
             )}
 
-            <div id="imaging" className="scroll-mt-24">
-                <ImagingCard items={imaging} />
-            </div>
+            {/* Home Care / General Instructions */}
+            {homeCareSteps.length > 0 && (
+                <CollapsibleSection
+                    id="home-care"
+                    title="Home Care Instructions"
+                    icon="🏠"
+                    count={homeCareSteps.length}
+                    accentColor="border-sage"
+                >
+                    <GeneralInstructions sections={generalSections} />
+                </CollapsibleSection>
+            )}
 
-            <Immunizations immunizations={result.immunizations} />
+            {/* Neonatal Guidance */}
+            {(ds.feedingPlan || ds.safeSleepInstructions || ds.developmentalGuidance) && (
+                <CollapsibleSection
+                    title="Neonatal Guidance"
+                    icon="👶"
+                    accentColor="border-teal"
+                >
+                    <NeonatalSection
+                        feedingPlan={ds.feedingPlan}
+                        safeSleep={ds.safeSleepInstructions}
+                        development={ds.developmentalGuidance}
+                        birthHistory={result.birthHistory}
+                    />
+                </CollapsibleSection>
+            )}
 
+            {/* ═══ TIER 3: Reference sections ═══ */}
+
+            {/* Labs */}
+            {labs.length > 0 && (
+                <CollapsibleSection
+                    id="labs"
+                    title="Lab Results"
+                    icon="🧪"
+                    count={labs.length}
+                    preview={labs.slice(0, 3).map((l: any) => l.name).join(", ")}
+                    accentColor="border-gray-300"
+                >
+                    <LabsTable
+                        labs={labs}
+                        overallNote={t?.overallLabNote ?? result.labsSection?.overallLabNote}
+                        translatedLabs={t?.labExplanations}
+                    />
+                </CollapsibleSection>
+            )}
+
+            {/* Imaging & Procedures */}
+            {imaging.length > 0 && (
+                <CollapsibleSection
+                    id="imaging"
+                    title="Imaging & Procedures"
+                    icon="📷"
+                    count={imaging.length}
+                    preview={imaging.slice(0, 2).map((im: any) => im.name || im.study).join(", ")}
+                    accentColor="border-gray-300"
+                >
+                    <ImagingCard items={imaging} />
+                </CollapsibleSection>
+            )}
+
+            {/* Immunizations */}
+            {immunizations.length > 0 && (
+                <CollapsibleSection
+                    title="Vaccines & Immunizations"
+                    icon="💉"
+                    count={immunizations.length}
+                    accentColor="border-gray-300"
+                >
+                    <Immunizations immunizations={immunizations} />
+                </CollapsibleSection>
+            )}
         </div>
     );
 }
