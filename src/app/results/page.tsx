@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { SummaryCard } from "@/components/SummaryCard";
@@ -9,7 +10,7 @@ import { AnalysisChat } from "@/components/AnalysisChat";
 import { TranslateButton } from "@/components/TranslateButton";
 import { DischargeSummaryLayout } from "@/components/results/DischargeSummaryLayout";
 import { LabsTable } from "@/components/LabsTable";
-import { clearAnalysis, loadAnalysis } from "@/lib/persistence/analysisStorage";
+import { clearAnalysis, loadAnalysis, loadHistory } from "@/lib/persistence/analysisStorage";
 import { isDischargeSummary } from "@/contracts/analysisSchema";
 
 export default function ResultsPage() {
@@ -20,8 +21,29 @@ export default function ResultsPage() {
     const [activeLangLabel, setActiveLangLabel] = useState<string | null>(null);
     const [chatOpen, setChatOpen] = useState(true);
 
+    const searchParams = useSearchParams();
+
     useEffect(() => {
         try {
+            // Support ?entry=N for viewing historical analyses
+            const entryParam = searchParams.get("entry");
+            if (entryParam !== null) {
+                const idx = parseInt(entryParam);
+                const history = loadHistory();
+                if (!isNaN(idx) && history[idx]) {
+                    setData({
+                        ok: true,
+                        documentType: history[idx].documentType,
+                        readingLevel: history[idx].readingLevel,
+                        extractedTextLength: history[idx].extractedTextLength,
+                        extractionPreview: history[idx].extractionPreview,
+                        result: history[idx].result,
+                        requestId: history[idx].requestId,
+                    });
+                    return;
+                }
+            }
+
             const payload = loadAnalysis();
             if (!payload) {
                 setError("No analysis found (or it expired). Please upload a document again.");
@@ -35,7 +57,7 @@ export default function ResultsPage() {
         } catch {
             setError("Saved analysis was corrupted. Please upload again.");
         }
-    }, []);
+    }, [searchParams]);
 
     const handleTranslated = useCallback((t: Record<string, any>, code: string, label: string) => {
         setTranslated(t);
@@ -152,6 +174,12 @@ export default function ResultsPage() {
                             className="px-5 py-2.5 rounded-lg border border-transparent text-gray-500 text-sm font-medium hover:text-gray-800 transition-colors"
                         >
                             Upload New
+                        </Link>
+                        <Link
+                            href="/history"
+                            className="px-5 py-2.5 rounded-lg border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                        >
+                            📊 History
                         </Link>
                         <div className="ml-auto flex items-center">
                             {result && (

@@ -6,6 +6,8 @@ import {
     isExpired,
 } from "@/lib/compliance/dataPolicy";
 import { auditComplianceEvent } from "@/lib/compliance/audit";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase/supabaseClient";
+import { getDeviceId } from "@/lib/supabase/deviceId";
 
 export type DocumentType = "lab_report" | "discharge_instructions";
 export type ReadingLevel = "simple" | "standard";
@@ -150,6 +152,24 @@ export function saveAnalysis(payload: AnalysisApiResponse) {
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+    // Dual-write to Supabase (fire-and-forget, non-blocking)
+    if (isSupabaseConfigured() && supabase) {
+        const deviceId = getDeviceId();
+        supabase
+            .from("analyses")
+            .insert({
+                device_id: deviceId,
+                document_type: payload.documentType,
+                reading_level: payload.readingLevel,
+                extraction_preview: payload.extractionPreview,
+                result: payload.result as unknown as Record<string, unknown>,
+                request_id: payload.requestId,
+            })
+            .then(({ error }) => {
+                if (error) console.warn("[Supabase] Failed to save analysis:", error.message);
+            });
+    }
 }
 
 /**
@@ -243,4 +263,93 @@ export function clearAnalysis() {
  */
 export function loadAnalysis(): AnalysisApiResponse | null {
     return loadLatestAnalysis();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Supabase-backed history for Multi-Document Timelines
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface LabTimepoint {
+    date: string;
+    value: string;
+    unit: string | null;
+    flag: string;
+}
+
+export interface LabTimeline {
+    labName: string;
+    points: LabTimepoint[];
+}
+
+/**
+ * Load full analysis history from Supabase (falls back to localStorage).
+ * No TTL applied — Supabase data persists indefinitely.
+ */
+export async function loadFullHistory(): Promise<HistoryEntry[]> {
+    if (isSupabaseConfigured() && supabase) {
+        const deviceId = getDeviceId();
+        const { data, error } = await supabase
+            .from("analyses")
+            .select("*")
+            .eq("device_id", deviceId)
+            .order("created_at", { ascending: false })
+            .limit(50);
+
+        if (!error && data && data.length > 0) {
+            return data.map((row: any) => ({
+                documentType: row.document_type,
+                readingLevel: row.reading_level,
+                extractedTextLength: 0,
+                extractionPreview: row.extraction_preview ?? "",
+                result: row.result as AnalysisResult,
+                requestId: row.request_id,
+                createdAt: row.created_at,
+            }));
+        }
+    }
+
+    // Fallback to localStorage
+    return loadHistory();
+}
+
+/**
+ * Extract lab timelines from history for sparkline charts.
+ * Groups lab values across documents by normalized name.
+ */
+export async function loadLabHistory(): Promise<LabTimeline[]> {
+    const entries = await loadFullHistory();
+    const labMap = new Map<string, LabTimepoint[]>();
+
+    for (const entry of entries) {
+        const labs = (entry.result as any)?.labsSection?.labs;
+        if (!Array.isArray(labs)) continue;
+
+        const entryDate = entry.createdAt;
+
+        for (const lab of labs) {
+            const key = lab.name?.toLowerCase().trim();
+            if (!key) continue;
+
+            const existing = labMap.get(key) ?? [];
+            existing.push({
+                date: entryDate,
+                value: lab.value,
+                unit: lab.unit ?? null,
+                flag: lab.flag ?? "unknown",
+            });
+            labMap.set(key, existing);
+        }
+    }
+
+    // Convert to array, sort each timeline by date (oldest first)
+    const timelines: LabTimeline[] = [];
+    for (const [labName, points] of labMap) {
+        points.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        timelines.push({ labName, points });
+    }
+
+    // Sort timelines by number of data points (most tracked first)
+    timelines.sort((a, b) => b.points.length - a.points.length);
+
+    return timelines;
 }

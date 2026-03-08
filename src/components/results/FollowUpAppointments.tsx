@@ -1,7 +1,19 @@
 import React from 'react';
+import { generateAppointmentICS, downloadICS } from '@/lib/calendar/generateICS';
 
 export function FollowUpAppointments({ appointments }: { appointments: any[] }) {
     if (!appointments || appointments.length === 0) return null;
+
+    const handleAddToCalendar = (appt: any) => {
+        const ics = generateAppointmentICS({
+            specialty: appt.specialty ?? "Follow-up",
+            provider: appt.provider,
+            dateTime: appt.dateTime ?? new Date().toISOString(),
+            purpose: appt.purpose ?? "Medical follow-up",
+            urgency: appt.urgency,
+        });
+        downloadICS(ics, `appointment-${appt.specialty?.replace(/\s+/g, "-") ?? "followup"}.ics`);
+    };
 
     return (
         <div className="space-y-4">
@@ -16,7 +28,7 @@ export function FollowUpAppointments({ appointments }: { appointments: any[] }) 
                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${isCritical ? 'bg-customRed-light/40 text-customRed' : 'bg-sand text-navy'}`}>
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 </div>
-                                <div>
+                                <div className="flex-1">
                                     <h4 className="font-serif text-[17px] text-navy leading-tight">{appt.specialty}</h4>
                                     {appt.provider && <div className="text-[13px] text-gray-500 font-medium mb-1">{appt.provider}</div>}
                                     <div className="text-[14px] text-navy font-bold flex items-center gap-1.5 mt-2">
@@ -26,6 +38,13 @@ export function FollowUpAppointments({ appointments }: { appointments: any[] }) 
                                     <div className="text-[13px] text-gray-600 mt-2 bg-gray-50 p-2 rounded leading-snug">
                                         {appt.purpose}
                                     </div>
+                                    <button
+                                        onClick={() => handleAddToCalendar(appt)}
+                                        className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold text-navy bg-sand hover:bg-sand/80 px-3 py-1.5 rounded-lg transition-colors"
+                                    >
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                                        Add to Calendar
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -35,3 +54,4 @@ export function FollowUpAppointments({ appointments }: { appointments: any[] }) 
         </div>
     );
 }
+
