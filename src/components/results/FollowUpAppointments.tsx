@@ -1,18 +1,17 @@
 import React from 'react';
-import { generateAppointmentICS, downloadICS } from '@/lib/calendar/generateICS';
+import { openGoogleCalendarAppointment } from '@/lib/calendar/generateICS';
 
 export function FollowUpAppointments({ appointments }: { appointments: any[] }) {
     if (!appointments || appointments.length === 0) return null;
 
     const handleAddToCalendar = (appt: any) => {
-        const ics = generateAppointmentICS({
+        openGoogleCalendarAppointment({
             specialty: appt.specialty ?? "Follow-up",
             provider: appt.provider,
             dateTime: appt.dateTime ?? new Date().toISOString(),
             purpose: appt.purpose ?? "Medical follow-up",
             urgency: appt.urgency,
         });
-        downloadICS(ics, `appointment-${appt.specialty?.replace(/\s+/g, "-") ?? "followup"}.ics`);
     };
 
     return (

@@ -10,7 +10,7 @@ import { Immunizations } from './Immunizations';
 import { NeonatalSection } from './NeonatalSection';
 import { GeneralInstructions } from './GeneralInstructions';
 import { LabsTable } from '../LabsTable';
-import { generateMedicationICS, downloadICS } from '@/lib/calendar/generateICS';
+import { openGoogleCalendarMeds } from '@/lib/calendar/generateICS';
 
 export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) {
     const ds = result.dischargeSection || {};
@@ -46,7 +46,7 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                         <h3 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 ml-1">Current Medications</h3>
                         <button
                             onClick={() => {
-                                const ics = generateMedicationICS(
+                                openGoogleCalendarMeds(
                                     meds.map((m: any) => ({
                                         name: m.name,
                                         timing: m.timing,
@@ -54,7 +54,6 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                                         purpose: m.purposePlain,
                                     }))
                                 );
-                                downloadICS(ics, "medication-reminders.ics");
                             }}
                             className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white bg-navy hover:bg-navy-light px-3.5 py-2 rounded-lg transition-colors shadow-sm"
                         >
