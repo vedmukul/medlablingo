@@ -146,42 +146,15 @@ export default function ResultsPage() {
                         </div>
                     </div>
 
-                    {/* ── Actions Bar ── */}
-                    <div className="flex flex-wrap gap-3 py-4 border-b border-gray-200">
+                    {/* ── Compact Actions Bar ── */}
+                    <div className="flex items-center gap-3 py-4 border-b border-gray-200">
                         <button
                             onClick={() => window.open('/results/print', '_blank')}
                             className="px-5 py-2.5 rounded-lg bg-navy text-white text-sm font-semibold hover:bg-navy-light transition-colors"
                         >
                             Export PDF
                         </button>
-                        <Link
-                            href="/clinician/review"
-                            className="px-5 py-2.5 rounded-lg border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-white bg-transparent transition-colors flex items-center"
-                        >
-                            Clinician View
-                        </Link>
-                        <button
-                            onClick={() => {
-                                clearAnalysis();
-                                location.reload();
-                            }}
-                            className="px-5 py-2.5 rounded-lg border border-transparent text-gray-500 text-sm font-medium hover:text-gray-800 transition-colors"
-                        >
-                            Clear Data
-                        </button>
-                        <Link
-                            href="/upload"
-                            className="px-5 py-2.5 rounded-lg border border-transparent text-gray-500 text-sm font-medium hover:text-gray-800 transition-colors"
-                        >
-                            Upload New
-                        </Link>
-                        <Link
-                            href="/history"
-                            className="px-5 py-2.5 rounded-lg border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-                        >
-                            📊 History
-                        </Link>
-                        <div className="ml-auto flex items-center">
+                        <div className="flex items-center">
                             {result && (
                                 <TranslateButton
                                     result={result}
@@ -190,6 +163,31 @@ export default function ResultsPage() {
                                     activeLanguage={activeLang}
                                 />
                             )}
+                        </div>
+
+                        {/* ⋯ More dropdown */}
+                        <div className="relative ml-auto group">
+                            <button className="px-3 py-2.5 rounded-lg border border-gray-200 text-gray-500 text-sm font-medium hover:bg-gray-50 transition-colors">
+                                ⋯
+                            </button>
+                            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg py-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                                <Link href="/clinician/review" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                    Clinician View
+                                </Link>
+                                <Link href="/history" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                    📊 History & Trends
+                                </Link>
+                                <Link href="/upload" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                    Upload New
+                                </Link>
+                                <hr className="my-1 border-gray-100" />
+                                <button
+                                    onClick={() => { clearAnalysis(); location.reload(); }}
+                                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                >
+                                    Clear Data
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -205,22 +203,6 @@ export default function ResultsPage() {
                             </button>
                         </div>
                     )}
-
-                    <DisclaimerBanner />
-
-                    {/* Extracted Text Preview - Hidden in details by default */}
-                    <details className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm mt-4 group">
-                        <summary className="font-medium cursor-pointer text-gray-700 list-none flex justify-between items-center">
-                            Original Extracted Text
-                            <span className="text-gray-400 group-open:rotate-180 transition-transform duration-200 text-xl leading-none">▾</span>
-                        </summary>
-                        <div className="pt-4 mt-4 border-t border-gray-100">
-                            <p className="text-sm text-gray-500 mb-3">Viewing the first ~300 characters of the parsed document for verification.</p>
-                            <pre className="bg-sand p-4 rounded-lg text-sm whitespace-pre-wrap text-gray-600 border border-gray-100 font-mono">
-                                {extractionPreview || "No preview available."}
-                            </pre>
-                        </div>
-                    </details>
 
                     <div className="flex flex-col lg:flex-row items-start gap-8 relative mt-8">
                         {/* Sticky Navigation Sidebar (Desktop) / Topbar (Mobile) */}
@@ -251,11 +233,25 @@ export default function ResultsPage() {
                                 {Array.isArray(result.imagingAndProcedures) && result.imagingAndProcedures.length > 0 && (
                                     <a href="#imaging" className="hover:text-navy whitespace-nowrap lg:whitespace-normal px-2 py-1.5 lg:px-3 lg:py-2 rounded-md hover:bg-gray-50 transition-colors">📷 Imaging</a>
                                 )}
+
+                                {/* Utility info tucked into sidebar on desktop */}
+                                <div className="hidden lg:block mt-6 pt-4 border-t border-gray-100 space-y-3">
+                                    <DisclaimerBanner />
+                                    <details className="group">
+                                        <summary className="text-[11px] text-gray-400 cursor-pointer hover:text-gray-600 transition-colors flex items-center gap-1">
+                                            Extracted Text
+                                            <span className="group-open:rotate-180 transition-transform">▾</span>
+                                        </summary>
+                                        <pre className="mt-2 bg-gray-50 p-3 rounded text-[10px] whitespace-pre-wrap text-gray-500 border border-gray-100 font-mono max-h-40 overflow-auto">
+                                            {extractionPreview || "No preview."}
+                                        </pre>
+                                    </details>
+                                </div>
                             </nav>
                         )}
 
                         {/* Main Content Column */}
-                        <div className="flex-1 w-full max-w-3xl mx-auto lg:mx-0">
+                        <div className="flex-1 w-full max-w-3xl mx-auto lg:mx-0 space-y-10">
                             {/* AI Summary */}
                             {result && (
                                 <>
