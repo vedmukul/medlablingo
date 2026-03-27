@@ -1,0 +1,21 @@
+{
+  "id": "f1ecf8b6-c7ee-47fd-96de-2ee30aaaa747",
+  "timestamp": "2026-03-27T15:32:51.703Z",
+  "branch": "main",
+  "repo": "medlablingo",
+  "author": "vedmukul",
+  "task": "Auto-saved on commit: chore: track Claude worktree snapshots and DevContext session",
+  "approaches": [],
+  "decisions": [],
+  "currentState": "Auto-saved on commit: chore: track Claude worktree snapshots and DevContext session",
+  "nextSteps": [],
+  "filesChanged": [],
+  "filesStaged": [],
+  "recentCommits": [
+    "b3692c8 chore: track Claude worktree snapshots and DevContext session",
+    "f328a12 fix: wrap useSearchParams in Suspense boundary for Vercel build",
+    "47d6fc8 feat: clinical calm redesign — progressive disclosure, grouped sidebar, overlay chat, warm aesthetics",
+    "08e2048 refactor: declutter results page — compact actions bar with dropdown, sidebar utility info",
+    "63a935a feat: per-dose Google Calendar events with proper timing labels"
+  ]
+}

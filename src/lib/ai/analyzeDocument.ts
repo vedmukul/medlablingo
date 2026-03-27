@@ -370,6 +370,59 @@ function mergeEscalationGuidance(raw: any, result: any) {
     };
 }
 
+function normalizeCareNavigation(raw: any): Record<string, unknown> | undefined {
+    const cn = findByAlias(raw, ["careNavigation", "care_navigation", "nextSteps", "carePlan", "actionPlan"]);
+    if (!cn || typeof cn !== "object") return undefined;
+    const out: Record<string, unknown> = {};
+    const today = coerceToStringArray(findByAlias(cn, ["doToday", "do_today", "today", "todayTasks"]));
+    const week = coerceToStringArray(findByAlias(cn, ["doThisWeek", "do_this_week", "thisWeek"]));
+    const before = coerceToStringArray(
+        findByAlias(cn, ["beforeNextAppointment", "before_next_appointment", "beforeNextVisit", "beforeVisit"])
+    );
+    const whoRaw = findByAlias(cn, ["whoToCall", "who_to_call", "contacts", "callThese"]);
+    if (today.length) out.doToday = today.slice(0, 25);
+    if (week.length) out.doThisWeek = week.slice(0, 25);
+    if (before.length) out.beforeNextAppointment = before.slice(0, 25);
+    if (Array.isArray(whoRaw) && whoRaw.length) {
+        out.whoToCall = whoRaw.slice(0, 15).map((w: any) => {
+            if (w && typeof w === "object") {
+                return {
+                    role: coerceToString(findByAlias(w, ["role", "type", "who"])) || "Care team",
+                    detail: coerceOptionalString(findByAlias(w, ["detail", "name", "department", "description"])),
+                    phoneHint: coerceOptionalString(findByAlias(w, ["phoneHint", "phone_hint", "phone", "number"])),
+                    whenToCall: coerceOptionalString(findByAlias(w, ["whenToCall", "when_to_call", "when"])),
+                };
+            }
+            return { role: coerceToString(w) || "Care team" };
+        });
+    }
+    return Object.keys(out).length ? out : undefined;
+}
+
+function normalizeMedicationReconciliation(raw: any): Array<{ name: string; status: string; note: string }> | undefined {
+    const arr = findByAlias(raw, [
+        "medicationReconciliation",
+        "medication_reconciliation",
+        "medReconciliation",
+        "medicationsReconciliation",
+        "medChanges",
+    ]);
+    if (!Array.isArray(arr)) return undefined;
+    const allowed = ["new", "continued", "stopped", "dose_changed", "unclear"] as const;
+    const out = arr
+        .map((m: any) => {
+            if (!m || typeof m !== "object") return null;
+            const name = coerceToString(findByAlias(m, ["name", "medication", "drug"])) || "Unknown";
+            const status = normalizeEnum(findByAlias(m, ["status", "changeType", "category"]), [...allowed], "unclear");
+            const note =
+                coerceToString(findByAlias(m, ["note", "notes", "explanation", "patientFriendlyNote"])) ||
+                "Confirm with your clinician or pharmacist.";
+            return { name, status, note };
+        })
+        .filter(Boolean) as Array<{ name: string; status: string; note: string }>;
+    return out.length ? out.slice(0, 40) : undefined;
+}
+
 /**
  * Post-processes the LLM response to ensure schema compliance.
  *
@@ -436,6 +489,7 @@ function postProcessResponse(
         "meta", "patientSummary", "questionsForDoctor",
         "questionsForDoctorConfidence", "whatWeCouldNotDetermine",
         "documentAnchors", "escalationGuidance",
+        "careNavigation", "medicationReconciliation",
         "labsSection", "dischargeSection", "imagingAndProcedures", "discontinuedMedications",
     ] as const;
     const result: any = pick(raw, TOP_KEYS);
@@ -471,7 +525,7 @@ function postProcessResponse(
     }
 
     result.meta = {
-        schemaVersion: "1.2.0" as const,
+        schemaVersion: "1.3.0" as const,
         createdAt,
         documentType: knownDocumentType,
         readingLevel: knownReadingLevel,
@@ -771,6 +825,18 @@ function postProcessResponse(
     }
     result.escalationGuidance = mergeEscalationGuidance(raw, result);
 
+    delete result.careNavigation;
+    const careNav = normalizeCareNavigation(raw);
+    if (careNav) {
+        result.careNavigation = careNav;
+    }
+
+    delete result.medicationReconciliation;
+    const medRec = normalizeMedicationReconciliation(raw);
+    if (medRec?.length) {
+        result.medicationReconciliation = medRec;
+    }
+
     return result;
 }
 
@@ -1038,12 +1104,14 @@ takeaways, instructions), you must:
         "- The JSON must exactly match the required schema for " + documentType + "\n" +
         "- Include modelInfo will be added automatically (do not include it)\n\n" +
         "REQUIRED FIELDS:\n" +
-        "- meta: metadata (schemaVersion: \"1.2.0\", createdAt, documentType, readingLevel, language, provenance, safety). Do NOT include modelInfo or traceability — the server adds them.\n" +
+        "- meta: metadata (schemaVersion: \"1.3.0\", createdAt, documentType, readingLevel, language, provenance, safety). Do NOT include modelInfo or traceability — the server adds them.\n" +
         "- patientSummary: overall summary and key takeaways (3-7 items)\n" +
         "- questionsForDoctor: 5-10 questions the patient should ask their doctor\n" +
         "- whatWeCouldNotDetermine: things we could NOT confidently read or infer — be specific (e.g. \"Dose of metoprolol unclear in scanned table\")\n" +
         "- documentAnchors: OPTIONAL array of { topic, verbatimExcerpt } — up to 12 SHORT verbatim phrases copied from the document (max ~400 chars each) that support your summary or key labs/warnings. Only real text from the document; no invention.\n" +
         "- escalationGuidance: OPTIONAL object { callEmergencyIf: string[], seekUrgentCareIf?: string[], crisisNote?: string } — add document-specific emergency triggers from the record; use clear, non-alarmist language.\n" +
+        "- careNavigation: OPTIONAL { doToday?: string[], doThisWeek?: string[], beforeNextAppointment?: string[], whoToCall?: { role, detail?, phoneHint?, whenToCall? }[] } — concrete next actions; phoneHint only if printed on document otherwise say \"Add your clinic number\".\n" +
+        "- medicationReconciliation: OPTIONAL array of { name, status: \"new\"|\"continued\"|\"stopped\"|\"dose_changed\"|\"unclear\", note } — compare discharge meds vs discontinued; use \"unclear\" when ambiguous.\n" +
         optLabText + "\n" +
         "Remember: Educational only, not medical advice. Always include safety disclaimers.";
 }
@@ -1131,7 +1199,7 @@ function getMockAnalysisResult(
     };
 
     const baseMeta = {
-        schemaVersion: "1.2.0" as const,
+        schemaVersion: "1.3.0" as const,
         createdAt: new Date().toISOString(),
         documentType,
         readingLevel,
@@ -1189,6 +1257,25 @@ function getMockAnalysisResult(
                 { topic: "Example lab line", verbatimExcerpt: "Sodium 135 mEq/L (reference 135-145)" },
             ],
             escalationGuidance: mockEscalation,
+            careNavigation: {
+                doToday: ["Read through your mock results below"],
+                doThisWeek: ["Schedule any follow-up labs your doctor recommended"],
+                beforeNextAppointment: ["Bring this summary and a list of your medications"],
+                whoToCall: [
+                    {
+                        role: "Primary care / ordering provider",
+                        phoneHint: "Add your clinic number here",
+                        whenToCall: "If a value worries you or you have new symptoms",
+                    },
+                ],
+            },
+            medicationReconciliation: [
+                {
+                    name: "Mock Medication Example",
+                    status: "unclear" as const,
+                    note: "Mock mode — confirm all medications with your clinician.",
+                },
+            ],
             labsSection: {
                 overallLabNote:
                     "Mock lab analysis - configure API key for real results",
@@ -1258,6 +1345,18 @@ function getMockAnalysisResult(
                 { topic: "Discharge", verbatimExcerpt: "Mock discharge excerpt for demonstration only." },
             ],
             escalationGuidance: mockEscalation,
+            careNavigation: {
+                doToday: ["Pick up prescribed medications", "Review warning signs on this summary"],
+                doThisWeek: ["Complete home monitoring tasks your team listed"],
+                beforeNextAppointment: ["Write down questions from the Questions section"],
+                whoToCall: [
+                    { role: "Primary care", phoneHint: "See discharge paperwork", whenToCall: "Non-urgent questions" },
+                    { role: "Specialist follow-up", detail: "Per your appointments", whenToCall: "If visit conflicts" },
+                ],
+            },
+            medicationReconciliation: [
+                { name: "Mock Medication", status: "new" as const, note: "Started at discharge — verify dose with pharmacy." },
+            ],
             labsSection: {
                 overallLabNote: "Mock lab analysis",
                 labs: [
@@ -1356,6 +1455,13 @@ function getMockAnalysisResult(
                 { topic: "Instructions", verbatimExcerpt: "Mock home care instruction" },
             ],
             escalationGuidance: mockEscalation,
+            careNavigation: {
+                doToday: ["Follow home care steps from your instructions"],
+                doThisWeek: ["Arrange follow-up if listed"],
+                beforeNextAppointment: ["Bring this summary and medication bottles"],
+                whoToCall: [{ role: "Your care team", phoneHint: "Add clinic number", whenToCall: "Questions about instructions" }],
+            },
+            medicationReconciliation: [],
             labsSection: undefined,
             dischargeSection: {
                 status: "draft" as const,

@@ -1,0 +1,24 @@
+{
+  "id": "context-2026-03-27-session",
+  "timestamp": "2026-03-27T18:22:00.000Z",
+  "branch": "main",
+  "repo": "medlablingo",
+  "task": "Care navigation, safety & trust UI, extract-preview + feedback APIs, OPERATIONS.md; full verify (Vitest/ESLint/tsc/build); CONTEXT-2026-03-27.md",
+  "summary": "Shipped schema 1.3.0 careNavigation + medicationReconciliation, trust/safety panels, red-flag quiz, confidence chips, feedback bar, PDF preflight on upload, FEEDBACK_WEBHOOK_URL. Fixed Next 16 lint (eslint), vitest.config + test suite alignment, npm test script.",
+  "benefitsPatients": [
+    "Action-oriented care navigation and optional med reconciliation",
+    "Upload PDF text quality check before full analyze",
+    "Safety framing: confidence chips, quiz, trust panel, local-only phone notes"
+  ],
+  "benefitsOperators": [
+    "OPERATIONS.md + env docs for BAAs and PHI-safe feedback",
+    "Feedback logging + optional webhook without storing comments on disk by default",
+    "Single verify command: test, lint, tsc, build"
+  ],
+  "verifyCommand": "npm run test && npm run lint && npx tsc --noEmit && npm run build",
+  "contextFile": "CONTEXT-2026-03-27.md",
+  "nextSteps": [
+    "Optional: translate new result sections",
+    "Optional: CI job for verify command"
+  ]
+}

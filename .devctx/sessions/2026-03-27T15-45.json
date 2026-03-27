@@ -1,0 +1,24 @@
+{
+  "id": "1f447df0-20d4-4a50-949a-1e6a104ce5d1",
+  "timestamp": "2026-03-27T15:45:59.224Z",
+  "branch": "main",
+  "repo": "medlablingo",
+  "author": "vedmukul",
+  "task": "Auto-saved on commit: feat: trust, safety, handoff exports, calendar bundle; fix WarningSigns icon",
+  "approaches": [],
+  "decisions": [],
+  "currentState": "Auto-saved on commit: feat: trust, safety, handoff exports, calendar bundle; fix WarningSigns icon",
+  "nextSteps": [],
+  "filesChanged": [
+    ".devctx/branches/main.json",
+    ".devctx/sessions/2026-03-27T15-32.json"
+  ],
+  "filesStaged": [],
+  "recentCommits": [
+    "d1b65c3 feat: trust, safety, handoff exports, calendar bundle; fix WarningSigns icon",
+    "b3692c8 chore: track Claude worktree snapshots and DevContext session",
+    "f328a12 fix: wrap useSearchParams in Suspense boundary for Vercel build",
+    "47d6fc8 feat: clinical calm redesign — progressive disclosure, grouped sidebar, overlay chat, warm aesthetics",
+    "08e2048 refactor: declutter results page — compact actions bar with dropdown, sidebar utility info"
+  ]
+}

@@ -9,6 +9,11 @@ import { AnalysisChat } from "@/components/AnalysisChat";
 import { TranslateButton } from "@/components/TranslateButton";
 import { DischargeSummaryLayout } from "@/components/results/DischargeSummaryLayout";
 import { TrustSafetyIntegrationsPanel } from "@/components/results/TrustSafetyIntegrationsPanel";
+import { CareNavigationPanel } from "@/components/results/CareNavigationPanel";
+import { MedicationReconciliationSection } from "@/components/results/MedicationReconciliationSection";
+import { RedFlagQuiz } from "@/components/results/RedFlagQuiz";
+import { SummaryConfidenceChips } from "@/components/results/SummaryConfidenceChips";
+import { FeedbackBar } from "@/components/results/FeedbackBar";
 import { LabsTable } from "@/components/LabsTable";
 import { clearAnalysis, loadAnalysis, loadHistory } from "@/lib/persistence/analysisStorage";
 import { isDischargeSummary } from "@/contracts/analysisSchema";
@@ -115,7 +120,7 @@ function ResultsContent() {
         );
     }
 
-    const { documentType, readingLevel, extractionPreview, result, extractedTextLength } = data as any;
+    const { documentType, readingLevel, extractionPreview, result, extractedTextLength, requestId } = data as any;
 
     const t = translated;
     const summary = t?.overallSummary ?? result?.patientSummary?.overallSummary;
@@ -215,6 +220,19 @@ function ResultsContent() {
                                 <a href="#trust-safety" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
                                     Safety &amp; handoff
                                 </a>
+                                {result?.careNavigation && (
+                                    <a href="#care-navigation" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
+                                        Care navigation
+                                    </a>
+                                )}
+                                {(result?.medicationReconciliation?.length ?? 0) > 0 && (
+                                    <a href="#med-reconciliation" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
+                                        Med reconciliation
+                                    </a>
+                                )}
+                                <a href="#quick-safety-check" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
+                                    Quick safety check
+                                </a>
                                 {warningCount > 0 && (
                                     <a href="#warning-signs" className="px-3 py-2 rounded-lg hover:bg-amber-light/40 hover:text-amber transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2">
                                         <span className="w-1.5 h-1.5 rounded-full bg-amber flex-shrink-0" />
@@ -307,13 +325,40 @@ function ResultsContent() {
                             </p>
                         </div>
 
+                        {result && !isDischargeSummary(result) && (
+                            <nav className="flex flex-wrap gap-2 text-[12px] font-medium text-gray-500 mb-2">
+                                <a href="#summary" className="hover:text-navy">Summary</a>
+                                <span className="text-gray-200">·</span>
+                                <a href="#trust-safety" className="hover:text-navy">Safety &amp; handoff</a>
+                                {result.careNavigation && (
+                                    <>
+                                        <span className="text-gray-200">·</span>
+                                        <a href="#care-navigation" className="hover:text-navy">Care navigation</a>
+                                    </>
+                                )}
+                                {(result.medicationReconciliation?.length ?? 0) > 0 && (
+                                    <>
+                                        <span className="text-gray-200">·</span>
+                                        <a href="#med-reconciliation" className="hover:text-navy">Meds</a>
+                                    </>
+                                )}
+                                <span className="text-gray-200">·</span>
+                                <a href="#quick-safety-check" className="hover:text-navy">Quick check</a>
+                            </nav>
+                        )}
+
                         {/* ══ TIER 1: Always visible ══ */}
 
                         {/* Summary — hero section */}
                         {result && (
                             <section id="summary" className="bg-white rounded-2xl p-7 space-y-5">
                                 <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Summary</h2>
-                                <p className="text-[16px] leading-[1.7] text-gray-700">{summary}</p>
+                                <SummaryConfidenceChips
+                                    overallSummaryConfidence={result.patientSummary?.overallSummaryConfidence}
+                                    keyTakeawaysConfidence={result.patientSummary?.keyTakeawaysConfidence}
+                                    takeawaysCount={takeaways.length}
+                                />
+                                <p className="text-[16px] leading-[1.7] text-gray-700 mt-3">{summary}</p>
 
                                 {takeaways.length > 0 && (
                                     <ul className="space-y-2.5 pt-2">
@@ -328,10 +373,24 @@ function ResultsContent() {
                             </section>
                         )}
 
+                        {result?.careNavigation && (
+                            <CareNavigationPanel careNavigation={result.careNavigation} />
+                        )}
+
+                        {result?.medicationReconciliation && result.medicationReconciliation.length > 0 && (
+                            <MedicationReconciliationSection items={result.medicationReconciliation} />
+                        )}
+
                         {result && (
                             <section id="trust-safety" className="scroll-mt-24">
                                 <TrustSafetyIntegrationsPanel result={result} extractedTextLength={extractedTextLength} />
                             </section>
+                        )}
+
+                        <RedFlagQuiz />
+
+                        {result && (
+                            <FeedbackBar requestId={requestId} schemaVersion={result.meta?.schemaVersion} />
                         )}
 
                         {/* Questions mini-card — floated near top */}

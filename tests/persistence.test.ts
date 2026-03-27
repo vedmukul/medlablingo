@@ -1,49 +1,13 @@
-// tests/persistence.test.ts
-// Minimal test suite for multi-entry analysis storage
-// Run with: npx tsx tests/persistence.test.ts
+// tests/persistence.test.ts — analysis storage (Vitest)
 
+import { describe, expect, it, beforeEach } from "vitest";
 import type { AnalysisApiResponse, HistoryEntry } from "../src/lib/persistence/analysisStorage";
-
-// Mock localStorage for Node.js environment
-class LocalStorageMock {
-    private store: Map<string, string> = new Map();
-
-    getItem(key: string): string | null {
-        return this.store.get(key) || null;
-    }
-
-    setItem(key: string, value: string): void {
-        this.store.set(key, value);
-    }
-
-    removeItem(key: string): void {
-        this.store.delete(key);
-    }
-
-    clear(): void {
-        this.store.clear();
-    }
-}
-
-global.localStorage = new LocalStorageMock() as any;
-
-// Import after localStorage mock is set up
-const { saveAnalysis, loadLatestAnalysis, loadHistory, clearAnalysis } = require("../src/lib/persistence/analysisStorage");
-
-// Test utilities
-let testCount = 0;
-let passCount = 0;
-
-function assert(condition: boolean, message: string) {
-    testCount++;
-    if (condition) {
-        passCount++;
-        console.log(`✓ ${message}`);
-    } else {
-        console.error(`✗ ${message}`);
-        throw new Error(`Assertion failed: ${message}`);
-    }
-}
+import {
+    saveAnalysis,
+    loadLatestAnalysis,
+    loadHistory,
+    clearAnalysis,
+} from "../src/lib/persistence/analysisStorage";
 
 function createMockAnalysis(docType: "lab_report" | "discharge_instructions", index: number): AnalysisApiResponse {
     return {
@@ -58,164 +22,133 @@ function createMockAnalysis(docType: "lab_report" | "discharge_instructions", in
             summary: `Summary ${index}`,
             ...(docType === "lab_report"
                 ? { labsSection: { overview: "Test", findings: [] } }
-                : { dischargeSection: { overview: "Test", sections: [] } }
-            )
-        } as any,
+                : { dischargeSection: { overview: "Test", sections: [] } }),
+        } as unknown as AnalysisApiResponse["result"],
         requestId: `req-${index}`,
     };
 }
 
-// Test Suite
-console.log("🧪 Running Persistence Storage Tests\n");
+describe("analysisStorage", () => {
+    beforeEach(() => {
+        clearAnalysis();
+        (globalThis.localStorage as Storage).clear();
+    });
 
-// Test 1: Save and Load Latest
-console.log("Test 1: Save and Load Latest Analysis");
-clearAnalysis();
-const analysis1 = createMockAnalysis("lab_report", 1);
-saveAnalysis(analysis1);
-const loaded1 = loadLatestAnalysis();
-assert(loaded1 !== null, "loadLatestAnalysis returns non-null");
-assert(loaded1?.requestId === "req-1", "Loaded correct analysis");
-assert(loaded1?.extractedTextLength === 1001, "Correct extracted text length");
-console.log();
+    it("save and load latest", () => {
+        const analysis1 = createMockAnalysis("lab_report", 1);
+        saveAnalysis(analysis1);
+        const loaded1 = loadLatestAnalysis();
+        expect(loaded1).not.toBeNull();
+        expect(loaded1?.requestId).toBe("req-1");
+        expect(loaded1?.extractedTextLength).toBe(1001);
+    });
 
-// Test 2: History Retrieval (newest → oldest)
-console.log("Test 2: History Retrieval Order");
-clearAnalysis();
-const analysis2a = createMockAnalysis("lab_report", 1);
-const analysis2b = createMockAnalysis("discharge_instructions", 2);
-const analysis2c = createMockAnalysis("lab_report", 3);
-saveAnalysis(analysis2a);
-saveAnalysis(analysis2b);
-saveAnalysis(analysis2c);
-const history = loadHistory();
-assert(history.length === 3, "History contains 3 entries");
-assert(history[0].requestId === "req-3", "First entry is newest (req-3)");
-assert(history[1].requestId === "req-2", "Second entry is middle (req-2)");
-assert(history[2].requestId === "req-1", "Third entry is oldest (req-1)");
-console.log();
+    it("returns history newest-first", () => {
+        saveAnalysis(createMockAnalysis("lab_report", 1));
+        saveAnalysis(createMockAnalysis("discharge_instructions", 2));
+        saveAnalysis(createMockAnalysis("lab_report", 3));
+        const history = loadHistory();
+        expect(history).toHaveLength(3);
+        expect(history[0].requestId).toBe("req-3");
+        expect(history[1].requestId).toBe("req-2");
+        expect(history[2].requestId).toBe("req-1");
+    });
 
-// Test 3: 10-Entry Limit
-console.log("Test 3: Enforce 10-Entry Maximum");
-clearAnalysis();
-for (let i = 1; i <= 12; i++) {
-    saveAnalysis(createMockAnalysis("lab_report", i));
-}
-const historyLimited = loadHistory();
-assert(historyLimited.length === 10, "History limited to 10 entries");
-assert(historyLimited[0].requestId === "req-12", "Newest entry retained (req-12)");
-assert(historyLimited[9].requestId === "req-3", "10th entry is req-3");
-// req-1 and req-2 should be dropped
-const hasReq1 = historyLimited.some((e: HistoryEntry) => e.requestId === "req-1");
-const hasReq2 = historyLimited.some((e: HistoryEntry) => e.requestId === "req-2");
-assert(!hasReq1 && !hasReq2, "Oldest 2 entries (req-1, req-2) were dropped");
-console.log();
-
-// Test 4: TTL Expiration (manual timestamp manipulation)
-console.log("Test 4: TTL Expiration and Auto-Pruning");
-clearAnalysis();
-// Manually create expired entry (25 hours ago)
-const expiredTimestamp = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString();
-const validTimestamp = new Date().toISOString();
-const storageData = {
-    version: "v2",
-    entries: [
-        {
-            documentType: "lab_report",
-            readingLevel: "simple",
-            extractedTextLength: 1000,
-            extractionPreview: "Valid",
-            requestId: "req-valid",
-            createdAt: validTimestamp,
-        },
-        {
-            documentType: "lab_report",
-            readingLevel: "simple",
-            extractedTextLength: 999,
-            extractionPreview: "Expired",
-            requestId: "req-expired",
-            createdAt: expiredTimestamp,
+    it("caps history at 10 entries", () => {
+        for (let i = 1; i <= 12; i++) {
+            saveAnalysis(createMockAnalysis("lab_report", i));
         }
-    ]
-};
-localStorage.setItem("lablingo:analysis:v1", JSON.stringify(storageData));
-const historyAfterExpiry = loadHistory();
-assert(historyAfterExpiry.length === 1, "Expired entry pruned, 1 valid entry remains");
-assert(historyAfterExpiry[0].requestId === "req-valid", "Valid entry retained");
-console.log();
+        const historyLimited = loadHistory();
+        expect(historyLimited).toHaveLength(10);
+        expect(historyLimited[0].requestId).toBe("req-12");
+        expect(historyLimited[9].requestId).toBe("req-3");
+        const ids = historyLimited.map((e: HistoryEntry) => e.requestId);
+        expect(ids).not.toContain("req-1");
+        expect(ids).not.toContain("req-2");
+    });
 
-// Test 5: Backward Compatibility (v1 → v2 migration)
-console.log("Test 5: Backward Compatibility (v1 Migration)");
-clearAnalysis();
-// Manually create v1 format
-const v1Data = {
-    version: "v1",
-    savedAt: new Date().toISOString(),
-    payload: {
-        ok: true,
-        documentType: "lab_report",
-        readingLevel: "simple",
-        extractedTextLength: 1500,
-        extractionPreview: "V1 Preview",
-        result: {
-            documentType: "lab_report",
-            readingLevel: "simple",
-            summary: "V1 Summary",
-            labsSection: { overview: "Test", findings: [] }
-        } as any,
-        requestId: "req-v1",
-    }
-};
-localStorage.setItem("lablingo:analysis:v1", JSON.stringify(v1Data));
-const loadedFromV1 = loadLatestAnalysis();
-assert(loadedFromV1 !== null, "v1 data migrated successfully");
-assert(loadedFromV1?.requestId === "req-v1", "v1 data preserved after migration");
-// Verify storage was upgraded to v2
-const rawStorage = localStorage.getItem("lablingo:analysis:v1");
-const parsedStorage = rawStorage ? JSON.parse(rawStorage) : null;
-assert(parsedStorage?.version === "v2", "Storage upgraded to v2");
-assert(Array.isArray(parsedStorage?.entries), "v2 has entries array");
-console.log();
+    it("prunes expired entries on read", () => {
+        const expiredTimestamp = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString();
+        const validTimestamp = new Date().toISOString();
+        const storageData = {
+            version: "v2",
+            entries: [
+                {
+                    documentType: "lab_report",
+                    readingLevel: "simple",
+                    extractedTextLength: 1000,
+                    extractionPreview: "Valid",
+                    requestId: "req-valid",
+                    createdAt: validTimestamp,
+                },
+                {
+                    documentType: "lab_report",
+                    readingLevel: "simple",
+                    extractedTextLength: 999,
+                    extractionPreview: "Expired",
+                    requestId: "req-expired",
+                    createdAt: expiredTimestamp,
+                },
+            ],
+        };
+        localStorage.setItem("lablingo:analysis:v1", JSON.stringify(storageData));
+        const historyAfterExpiry = loadHistory();
+        expect(historyAfterExpiry).toHaveLength(1);
+        expect(historyAfterExpiry[0].requestId).toBe("req-valid");
+    });
 
-// Test 6: PHI Safety (no extractedText stored)
-console.log("Test 6: PHI Safety - No extractedText Stored");
-clearAnalysis();
-const analysisWithPHI = {
-    ...createMockAnalysis("lab_report", 1),
-    // Simulate extractedText being present in API response (should NOT be stored)
-    extractedText: "SENSITIVE PATIENT DATA - SSN: 123-45-6789, Name: John Doe"
-} as any;
-saveAnalysis(analysisWithPHI);
-const rawStorageForPHI = localStorage.getItem("lablingo:analysis:v1");
-const storageParsed = rawStorageForPHI ? JSON.parse(rawStorageForPHI) : null;
-// Check entries array for extractedText field
-const entryHasExtractedText = storageParsed?.entries?.some((e: any) => 'extractedText' in e);
-const hasSensitiveData = JSON.stringify(storageParsed).includes("SENSITIVE PATIENT DATA");
-assert(!entryHasExtractedText, "extractedText field not present in storage entries");
-assert(!hasSensitiveData, "Sensitive data not stored");
-assert(storageParsed?.entries[0]?.extractedTextLength === 1001, "extractedTextLength stored (metadata only)");
-assert(storageParsed?.entries[0]?.extractionPreview === "Preview 1", "extractionPreview stored (safe)");
-console.log();
+    it("migrates v1 blob to v2", () => {
+        const v1Data = {
+            version: "v1",
+            savedAt: new Date().toISOString(),
+            payload: {
+                ok: true,
+                documentType: "lab_report",
+                readingLevel: "simple",
+                extractedTextLength: 1500,
+                extractionPreview: "V1 Preview",
+                result: {
+                    documentType: "lab_report",
+                    readingLevel: "simple",
+                    summary: "V1 Summary",
+                    labsSection: { overview: "Test", findings: [] },
+                } as unknown as AnalysisApiResponse["result"],
+                requestId: "req-v1",
+            },
+        };
+        localStorage.setItem("lablingo:analysis:v1", JSON.stringify(v1Data));
+        const loadedFromV1 = loadLatestAnalysis();
+        expect(loadedFromV1).not.toBeNull();
+        expect(loadedFromV1?.requestId).toBe("req-v1");
+        const rawStorage = localStorage.getItem("lablingo:analysis:v1");
+        const parsedStorage = rawStorage ? JSON.parse(rawStorage) : null;
+        expect(parsedStorage?.version).toBe("v2");
+        expect(Array.isArray(parsedStorage?.entries)).toBe(true);
+    });
 
-// Test 7: Clear All History
-console.log("Test 7: Clear All History");
-clearAnalysis();
-saveAnalysis(createMockAnalysis("lab_report", 1));
-saveAnalysis(createMockAnalysis("lab_report", 2));
-clearAnalysis();
-const historyAfterClear = loadHistory();
-const loadedAfterClear = loadLatestAnalysis();
-assert(historyAfterClear.length === 0, "History empty after clearAnalysis()");
-assert(loadedAfterClear === null, "loadLatestAnalysis returns null after clear");
-console.log();
+    it("does not persist extractedText in storage", () => {
+        const analysisWithPHI = {
+            ...createMockAnalysis("lab_report", 1),
+            extractedText: "SENSITIVE PATIENT DATA - SSN: 123-45-6789, Name: John Doe",
+        } as AnalysisApiResponse & { extractedText: string };
+        saveAnalysis(analysisWithPHI);
+        const rawStorageForPHI = localStorage.getItem("lablingo:analysis:v1");
+        const storageParsed = rawStorageForPHI ? JSON.parse(rawStorageForPHI) : null;
+        const entryHasExtractedText = storageParsed?.entries?.some((e: Record<string, unknown>) =>
+            Object.prototype.hasOwnProperty.call(e, "extractedText")
+        );
+        const hasSensitiveData = JSON.stringify(storageParsed).includes("SENSITIVE PATIENT DATA");
+        expect(entryHasExtractedText).toBe(false);
+        expect(hasSensitiveData).toBe(false);
+        expect(storageParsed?.entries[0]?.extractedTextLength).toBe(1001);
+        expect(storageParsed?.entries[0]?.extractionPreview).toBe("Preview 1");
+    });
 
-// Summary
-console.log("═".repeat(50));
-console.log(`✅ All ${passCount}/${testCount} tests passed!\n`);
-console.log("Verified:");
-console.log("  ✓ Multi-entry storage (up to 10 entries)");
-console.log("  ✓ TTL enforcement with auto-pruning");
-console.log("  ✓ Backward compatibility (v1 → v2 migration)");
-console.log("  ✓ PHI safety (no extractedText stored)");
-console.log("  ✓ Correct ordering (newest → oldest)");
-console.log("  ✓ Clear functionality");
+    it("clearAnalysis empties history", () => {
+        saveAnalysis(createMockAnalysis("lab_report", 1));
+        saveAnalysis(createMockAnalysis("lab_report", 2));
+        clearAnalysis();
+        expect(loadHistory()).toHaveLength(0);
+        expect(loadLatestAnalysis()).toBeNull();
+    });
+});

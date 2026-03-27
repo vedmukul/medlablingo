@@ -32,6 +32,11 @@ function UploadForm() {
     const [progressMessage, setProgressMessage] = useState("");
     const [completedStages, setCompletedStages] = useState<string[]>([]);
     const [requestId, setRequestId] = useState<string | null>(null);
+    const [pdfPreview, setPdfPreview] = useState<
+        | null
+        | "loading"
+        | { charCount: number; quality: string; warnings: string[] }
+    >(null);
 
     const progressTimers = useRef<NodeJS.Timeout[]>([]);
 
@@ -39,6 +44,47 @@ function UploadForm() {
         const typeParam = searchParams.get("documentType");
         if (typeParam) setDocumentType(typeParam);
     }, [searchParams]);
+
+    useEffect(() => {
+        if (!file) {
+            setPdfPreview(null);
+            return;
+        }
+        const ac = new AbortController();
+        const timer = setTimeout(async () => {
+            setPdfPreview("loading");
+            const fd = new FormData();
+            fd.append("file", file);
+            try {
+                const res = await fetch("/api/extract-preview", {
+                    method: "POST",
+                    body: fd,
+                    signal: ac.signal,
+                });
+                const j = await res.json().catch(() => null);
+                if (ac.signal.aborted) return;
+                if (j?.ok) {
+                    setPdfPreview({
+                        charCount: j.charCount,
+                        quality: j.quality,
+                        warnings: Array.isArray(j.warnings) ? j.warnings : [],
+                    });
+                } else {
+                    setPdfPreview({
+                        charCount: 0,
+                        quality: "empty",
+                        warnings: [j?.hint || j?.error || "Could not preview this PDF."],
+                    });
+                }
+            } catch {
+                if (!ac.signal.aborted) setPdfPreview(null);
+            }
+        }, 450);
+        return () => {
+            clearTimeout(timer);
+            ac.abort();
+        };
+    }, [file]);
 
     // Cleanup timers on unmount
     useEffect(() => {
@@ -420,6 +466,32 @@ function UploadForm() {
                                     <p className="text-xs text-green-600 mt-1">
                                         {formatFileSize(file.size)}
                                     </p>
+                                    {pdfPreview === "loading" && (
+                                        <p className="text-xs text-indigo-600 mt-3">Checking whether text can be read from your PDF…</p>
+                                    )}
+                                    {pdfPreview && pdfPreview !== "loading" && (
+                                        <div
+                                            className={`mt-3 text-left rounded-lg border px-3 py-2 text-xs ${
+                                                pdfPreview.quality === "ok"
+                                                    ? "bg-green-50 border-green-200 text-green-900"
+                                                    : pdfPreview.quality === "low"
+                                                      ? "bg-amber-50 border-amber-200 text-amber-900"
+                                                      : "bg-red-50 border-red-200 text-red-900"
+                                            }`}
+                                        >
+                                            <p className="font-semibold">
+                                                {pdfPreview.quality === "ok" && "Text looks readable for analysis"}
+                                                {pdfPreview.quality === "low" && "Low text — results may be unreliable"}
+                                                {pdfPreview.quality === "empty" && "No text detected — analysis will likely fail"}
+                                            </p>
+                                            <p className="mt-1 opacity-90">~{pdfPreview.charCount.toLocaleString()} characters found</p>
+                                            {pdfPreview.warnings.map((w, i) => (
+                                                <p key={i} className="mt-1 leading-snug">
+                                                    {w}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    )}
                                     <button
                                         type="button"
                                         onClick={handleRemoveFile}

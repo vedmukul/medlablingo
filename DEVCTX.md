@@ -1,7 +1,8 @@
 # Development Context — LabLingo
 
-**Last updated:** 2026-02-07
-**Session summary:** Extensive debugging of AI response parsing, UI enhancements, feature additions, and startup pitch preparation.
+**Last updated:** 2026-03-27  
+**Same-day detail:** See [`CONTEXT-2026-03-27.md`](./CONTEXT-2026-03-27.md) (care navigation, safety & trust, extract-preview, feedback, verification tooling).  
+**Session summary (2026-02-07 archive below):** Extensive debugging of AI response parsing, UI enhancements, feature additions, and startup pitch preparation.
 
 ---
 

@@ -35,7 +35,7 @@ const ConfidenceScoreSchema = z.number().min(0).max(1).optional();
 
 const MetaSchema = z
     .object({
-        schemaVersion: z.enum(["1.0.0", "1.1.0", "1.2.0"]), // Accept both for backward compatibility
+        schemaVersion: z.enum(["1.0.0", "1.1.0", "1.2.0", "1.3.0"]),
         createdAt: z.string().datetime(), // ISO 8601 string
         documentType: DocumentTypeSchema,
         readingLevel: ReadingLevelSchema,
@@ -224,6 +224,32 @@ const EscalationGuidanceSchema = z
     })
     .strict();
 
+const WhoToCallSlotSchema = z
+    .object({
+        role: z.string(),
+        detail: z.string().optional(),
+        phoneHint: z.string().optional(),
+        whenToCall: z.string().optional(),
+    })
+    .strict();
+
+const CareNavigationSchema = z
+    .object({
+        doToday: z.array(z.string()).max(25).optional(),
+        doThisWeek: z.array(z.string()).max(25).optional(),
+        beforeNextAppointment: z.array(z.string()).max(25).optional(),
+        whoToCall: z.array(WhoToCallSlotSchema).max(15).optional(),
+    })
+    .strict();
+
+const MedReconciliationItemSchema = z
+    .object({
+        name: z.string(),
+        status: z.enum(["new", "continued", "stopped", "dose_changed", "unclear"]),
+        note: z.string(),
+    })
+    .strict();
+
 const BaseAnalysisSchema = z.object({
     meta: MetaSchema,
     patientSummary: PatientSummarySchema,
@@ -234,6 +260,10 @@ const BaseAnalysisSchema = z.object({
     documentAnchors: z.array(DocumentAnchorSchema).max(20).optional(),
     /** When to call emergency services vs urgent care — merged with sensible defaults server-side */
     escalationGuidance: EscalationGuidanceSchema.optional(),
+    /** Action-oriented navigation: today / this week / before visit + who to call (v1.3.0+) */
+    careNavigation: CareNavigationSchema.optional(),
+    /** Medication change status vs prior therapy — educational; confirm with clinician (v1.3.0+) */
+    medicationReconciliation: z.array(MedReconciliationItemSchema).max(40).optional(),
 });
 
 /**
