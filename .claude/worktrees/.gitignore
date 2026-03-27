@@ -1,0 +1,8 @@
+# Claude Code worktrees may contain local build artifacts and git pointers.
+# Keep the tree in git for reference; exclude heavy / machine-specific paths.
+**/.next/
+**/node_modules/
+**/.env.local
+**/.env.*.local
+# Git worktree pointer (absolute path on creator's machine)
+**/.git

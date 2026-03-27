@@ -1,0 +1,133 @@
+{
+    "meta": {
+        "documentType": "discharge_summary",
+        "provenance": {
+            "source": "hospital_system",
+            "reliability": "high"
+        }
+    },
+    "patientSummary": {
+        "whatThisIs": "A comprehensive discharge summary from your recent hospitalization.",
+        "mainPurpose": "To ensure you transition smoothly from hospital to home.",
+        "keyFindings": "You were treated for a heart condition and some kidney issues. Lab tests show stable numbers, and imaging confirmed your heart function.",
+        "readingLevel": "high_school"
+    },
+    "questionsForDoctor": [
+        "Are my heart medications going to affect my kidneys?",
+        "When should I follow up with the cardiologist?",
+        "Should I still take my old blood pressure medication?",
+        "What is the target for my daily weight?",
+        "Can I start light exercise next week?"
+    ],
+    "whatWeCouldNotDetermine": [],
+    "dischargeSection": {
+        "status": "approved",
+        "homeCareSteps": [
+            "Rest for the first 3 days after discharge.",
+            "Keep your legs elevated when sitting to reduce swelling."
+        ],
+        "medications": [
+            {
+                "name": "Furosemide",
+                "purposePlain": "A water pill to reduce swelling and fluid buildup.",
+                "howToTakeFromDoc": "Take 40mg by mouth once daily in the morning.",
+                "timing": "Morning",
+                "cautionsGeneral": "May make you urinate frequently. Drink water but do not exceed your fluid restriction."
+            },
+            {
+                "name": "Metoprolol",
+                "purposePlain": "Beta blocker to slow your heart rate and lower blood pressure.",
+                "howToTakeFromDoc": "Take 25mg by mouth twice daily.",
+                "timing": "Twice daily",
+                "cautionsGeneral": "Do not stop taking suddenly. May cause dizziness when standing up quickly."
+            }
+        ],
+        "followUp": [],
+        "followUpStructured": [
+            {
+                "specialty": "Cardiology",
+                "provider": "Dr. Heartbeat",
+                "dateTime": "03/10/2025 @ 10:00 AM",
+                "purpose": "Post-discharge checkup and medication review",
+                "urgency": "important"
+            }
+        ],
+        "warningSignsFromDoc": [
+            {
+                "symptom": "Weight gain of more than 3 lbs in one day",
+                "action": "Call your heart failure clinic immediately."
+            },
+            {
+                "symptom": "Shortness of breath that wakes you up at night",
+                "action": "Go to the nearest emergency room."
+            }
+        ],
+        "generalRedFlags": [],
+        "diagnosesMentionedInDoc": [
+            "Heart Failure",
+            "Chronic Kidney Disease"
+        ],
+        "dietInstructions": "Follow a low-sodium diet (less than 2000mg per day). Fluid restriction of 1.5 liters per day.",
+        "activityRestrictions": "No heavy lifting greater than 10 lbs for 2 weeks. Start with light walking inside the house.",
+        "dailyMonitoring": [
+            "Weigh yourself every morning after using the bathroom and before eating.",
+            "Check your blood pressure once daily."
+        ]
+    },
+    "labsSection": {
+        "overallLabNote": "Your lab values were mostly stable. We are keeping a close eye on your kidney function.",
+        "labs": [
+            {
+                "name": "Creatinine",
+                "value": "1.3",
+                "unit": "mg/dL",
+                "referenceRange": "0.7 - 1.2",
+                "flag": "high",
+                "importance": "high_importance",
+                "explanation": "Creatinine measures how well your kidneys are filtering waste. This value is slightly elevated, meaning your kidneys are working a bit harder than normal.",
+                "confidenceScore": {
+                    "score": 0.95,
+                    "justification": "Values explicitly extracted from the latest lab report."
+                }
+            },
+            {
+                "name": "Potassium",
+                "value": "4.2",
+                "unit": "mmol/L",
+                "referenceRange": "3.5 - 5.1",
+                "flag": "normal",
+                "importance": "standard",
+                "explanation": "Potassium is an important mineral that helps your heart rhythm. Your value is perfectly normal.",
+                "confidenceScore": {
+                    "score": 0.98,
+                    "justification": "Clear value found in the results."
+                }
+            }
+        ]
+    },
+    "imagingAndProcedures": [
+        {
+            "name": "Transthoracic Echocardiogram (TTE)",
+            "date": "02/15/2025",
+            "findingsPlain": "The ultrasound of your heart showed that the main pumping chamber is slightly weak, but the valves are working normally.",
+            "keyValues": [
+                {
+                    "label": "Ejection Fraction",
+                    "value": "45%",
+                    "interpretation": "Mildly reduced heart pumping ability. Normal is 50-70%."
+                }
+            ],
+            "confidenceScore": {
+                "score": 0.92,
+                "justification": "Sourced from the verified TTE report."
+            }
+        }
+    ],
+    "discontinuedMedications": [
+        {
+            "name": "Lisinopril",
+            "reasonPlain": "Stopped to prevent further strain on your kidneys during your hospital stay."
+        }
+    ],
+    "hospitalCourse": "You were admitted for shortness of breath due to heart failure. You received IV diuretics to remove excess fluid, which improved your symptoms. Your kidney function was monitored closely and remained stable."
+}

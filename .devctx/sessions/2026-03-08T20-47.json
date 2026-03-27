@@ -1,0 +1,23 @@
+{
+  "id": "b7ef8f31-ceed-4b1c-8ac2-3e623816cc6d",
+  "timestamp": "2026-03-08T20:47:00.260Z",
+  "branch": "addon",
+  "repo": "medlablingo",
+  "author": "vedmukul",
+  "task": "Auto-saved on commit: chore: save session context — Calendar Export, Supabase, Clinical Calm redesign",
+  "approaches": [],
+  "decisions": [],
+  "currentState": "Auto-saved on commit: chore: save session context — Calendar Export, Supabase, Clinical Calm redesign",
+  "nextSteps": [],
+  "filesChanged": [
+    ".claude/worktrees/cranky-easley"
+  ],
+  "filesStaged": [],
+  "recentCommits": [
+    "3e9dd55 chore: save session context — Calendar Export, Supabase, Clinical Calm redesign",
+    "f328a12 fix: wrap useSearchParams in Suspense boundary for Vercel build",
+    "47d6fc8 feat: clinical calm redesign — progressive disclosure, grouped sidebar, overlay chat, warm aesthetics",
+    "08e2048 refactor: declutter results page — compact actions bar with dropdown, sidebar utility info",
+    "63a935a feat: per-dose Google Calendar events with proper timing labels"
+  ]
+}

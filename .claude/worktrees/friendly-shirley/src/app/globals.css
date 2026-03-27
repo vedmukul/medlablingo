@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Clinical Calm — CSS Custom Properties */
+:root {
+  --surface: #FAF8F5;
+  --surface-warm: #F5F0EB;
+  --surface-card: #FFFFFF;
+  --accent: #4A8B8C;
+  --accent-dark: #3A7071;
+  --accent-light: #E8F4F4;
+  --accent-muted: #B8D8D8;
+  --status-normal: #48825B;
+  --status-normal-bg: #EDF5F0;
+  --status-caution: #B7791F;
+  --status-caution-bg: #FEF9EC;
+  --status-critical: #C53030;
+  --status-critical-bg: #FEF2F2;
+  --text-primary: #2D3748;
+  --text-secondary: #718096;
+  --text-muted: #A0AEC0;
+  --text-inverse: #FFFFFF;
+}
+
+/* Print Styles */
+@media print {
+  /* Hide elements that shouldn't be printed */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Ensure readable text colors */
+  body {
+    color: #000;
+    background: #fff;
+  }
+
+  /* Better spacing and page breaks */
+  section {
+    page-break-inside: avoid;
+  }
+
+  h1, h2, h3 {
+    page-break-after: avoid;
+    color: #000;
+  }
+
+  /* Table print optimization */
+  table {
+    page-break-inside: auto;
+    border-collapse: collapse;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  /* Remove shadows and unnecessary decorations */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Ensure links are visible */
+  a {
+    text-decoration: underline;
+  }
+
+  /* Force borders to show */
+  .border {
+    border-color: #000 !important;
+  }
+}
