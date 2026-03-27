@@ -1,9 +1,9 @@
 // src/app/upload/page.tsx
 "use client";
 
-import React, { useState, useEffect, Suspense, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FileUp, Shield } from "lucide-react";
 import { Loading } from "@/components/Loading";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
@@ -23,10 +23,10 @@ const PROGRESS_STAGES = [
 
 function UploadForm() {
     const router = useRouter();
-    const searchParams = useSearchParams();
 
     const [file, setFile] = useState<File | null>(null);
-    const [documentType, setDocumentType] = useState("discharge_summary");
+    /** Always auto — the model classifies the PDF (no manual document-type UI). */
+    const documentType = "auto";
     const [readingLevel, setReadingLevel] = useState("standard");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -41,11 +41,6 @@ function UploadForm() {
     >(null);
 
     const progressTimers = useRef<NodeJS.Timeout[]>([]);
-
-    useEffect(() => {
-        const typeParam = searchParams.get("documentType");
-        if (typeParam) setDocumentType(typeParam);
-    }, [searchParams]);
 
     useEffect(() => {
         if (!file) {
@@ -345,67 +340,17 @@ function UploadForm() {
                     </div>
                 )}
 
-                <fieldset>
-                    <legend className="block text-sm font-medium text-gray-700 mb-2">
-                        Document type
-                    </legend>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <label
-                            className={`cursor-pointer rounded-xl border p-3 min-h-[72px] flex flex-col items-center justify-center text-center motion-safe:transition-colors focus-within:ring-2 focus-within:ring-navy/35 focus-within:ring-offset-2 ${
-                                documentType === "lab_report"
-                                    ? "border-navy bg-sand text-navy shadow-sm"
-                                    : "border-gray-200 hover:border-teal/40 hover:bg-warmBase"
-                            }`}
-                        >
-                            <input
-                                type="radio"
-                                name="documentType"
-                                value="lab_report"
-                                checked={documentType === "lab_report"}
-                                onChange={(e) => setDocumentType(e.target.value)}
-                                className="sr-only"
-                            />
-                            <span className="font-medium text-sm">Lab report</span>
-                            <span className="text-xs mt-1 text-gray-500">Blood work, pathology</span>
-                        </label>
-                        <label
-                            className={`cursor-pointer rounded-xl border p-3 min-h-[72px] flex flex-col items-center justify-center text-center motion-safe:transition-colors focus-within:ring-2 focus-within:ring-navy/35 focus-within:ring-offset-2 ${
-                                documentType === "discharge_instructions"
-                                    ? "border-navy bg-sand text-navy shadow-sm"
-                                    : "border-gray-200 hover:border-teal/40 hover:bg-warmBase"
-                            }`}
-                        >
-                            <input
-                                type="radio"
-                                name="documentType"
-                                value="discharge_instructions"
-                                checked={documentType === "discharge_instructions"}
-                                onChange={(e) => setDocumentType(e.target.value)}
-                                className="sr-only"
-                            />
-                            <span className="font-medium text-sm">Basic instructions</span>
-                            <span className="text-xs mt-1 text-gray-500">Simple home steps</span>
-                        </label>
-                        <label
-                            className={`cursor-pointer rounded-xl border p-3 min-h-[72px] flex flex-col items-center justify-center text-center motion-safe:transition-colors focus-within:ring-2 focus-within:ring-navy/35 focus-within:ring-offset-2 ${
-                                documentType === "discharge_summary"
-                                    ? "border-navy bg-sand text-navy shadow-sm"
-                                    : "border-gray-200 hover:border-teal/40 hover:bg-warmBase"
-                            }`}
-                        >
-                            <input
-                                type="radio"
-                                name="documentType"
-                                value="discharge_summary"
-                                checked={documentType === "discharge_summary"}
-                                onChange={(e) => setDocumentType(e.target.value)}
-                                className="sr-only"
-                            />
-                            <span className="font-medium text-sm">Discharge summary</span>
-                            <span className="text-xs mt-1 text-gray-500">Full hospital packet</span>
-                        </label>
-                    </div>
-                </fieldset>
+                <div className="rounded-xl border border-gray-100 bg-warmBase/40 px-4 py-3 text-sm text-gray-700">
+                    <p className="font-medium text-navy mb-2">What you can upload</p>
+                    <ul className="list-disc pl-5 space-y-1.5 text-gray-600">
+                        <li>Lab reports, blood work, and pathology results</li>
+                        <li>Discharge instructions and home-care summaries</li>
+                        <li>Full hospital discharge summaries (labs + medications + follow-up)</li>
+                    </ul>
+                    <p className="mt-3 text-gray-600 leading-relaxed">
+                        You do not need to pick a type — we read your PDF and tailor the summary to what is in the document.
+                    </p>
+                </div>
 
                 <div>
                     <label
@@ -467,10 +412,10 @@ function UploadForm() {
                                             strokeLinejoin="round"
                                         />
                                     </svg>
-                                    <div className="flex text-sm text-gray-600 justify-center">
+                                    <p className="text-sm text-gray-600 text-center px-2 leading-normal max-w-full">
                                         <label
                                             htmlFor="file-upload"
-                                            className="relative cursor-pointer bg-white rounded-lg font-medium text-navy hover:text-teal px-2 py-1 -mx-2 motion-safe:transition-colors focus-within:outline-none focus-within:ring-2 focus-within:ring-navy/35 focus-within:ring-offset-2"
+                                            className="relative cursor-pointer inline font-medium text-navy hover:text-teal px-1.5 py-0.5 rounded-md motion-safe:transition-colors focus-within:outline-none focus-within:ring-2 focus-within:ring-navy/35 focus-within:ring-offset-2"
                                         >
                                             <span>Upload a file</span>
                                             <input
@@ -482,8 +427,8 @@ function UploadForm() {
                                                 onChange={handleFileInputChange}
                                             />
                                         </label>
-                                        <p className="pl-1">or drag and drop</p>
-                                    </div>
+                                        <span className="text-gray-600">{" "}or drag and drop</span>
+                                    </p>
                                     <p className="text-xs text-gray-500">
                                         PDF up to {MAX_FILE_SIZE_MB}MB
                                     </p>
@@ -619,9 +564,7 @@ export default function UploadPage() {
                     </div>
                 </div>
 
-                <Suspense fallback={<Loading />}>
-                    <UploadForm />
-                </Suspense>
+                <UploadForm />
             </div>
         </main>
     );

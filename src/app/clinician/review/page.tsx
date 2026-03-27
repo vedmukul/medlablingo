@@ -3,6 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+    ClipboardCopy,
+    ExternalLink,
+    FileJson,
+    Hash,
+    Home,
+    Stethoscope,
+    Trash2,
+    Upload,
+} from "lucide-react";
+import {
     loadAnalysis,
     clearAnalysis,
     isAnalysisExpired,
@@ -196,16 +206,25 @@ export default function ClinicianReviewPage() {
 
     if (loadError) {
         return (
-            <main className="max-w-3xl mx-auto p-6 space-y-4">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-semibold">Clinician Review</h1>
-                    <Link href="/upload" className="text-sm text-blue-600">
-                        ← Back to upload
-                    </Link>
-                </div>
+            <main className="min-h-dvh bg-warmBase p-6">
+                <div className="max-w-3xl mx-auto space-y-6">
+                    <div className="flex flex-wrap justify-between items-center gap-3">
+                        <h1 className="text-2xl font-serif font-bold text-navy flex items-center gap-2">
+                            <Stethoscope className="w-7 h-7 text-teal shrink-0" strokeWidth={1.75} aria-hidden />
+                            Clinician review
+                        </h1>
+                        <Link
+                            href="/upload"
+                            className="inline-flex items-center gap-2 text-sm font-semibold text-teal hover:text-navy motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/35 rounded-lg px-1"
+                        >
+                            <Upload className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden />
+                            Back to upload
+                        </Link>
+                    </div>
 
-                <div className="border rounded-lg p-4 bg-yellow-50">
-                    <p className="text-sm text-yellow-900">{loadError}</p>
+                    <div className="rounded-2xl border border-amber/30 bg-amber-light/50 p-5">
+                        <p className="text-sm text-amber-900 leading-relaxed">{loadError}</p>
+                    </div>
                 </div>
             </main>
         );
@@ -213,8 +232,8 @@ export default function ClinicianReviewPage() {
 
     if (!data) {
         return (
-            <main className="max-w-3xl mx-auto p-6">
-                <p className="text-sm text-gray-600">Loading…</p>
+            <main className="min-h-dvh bg-warmBase flex items-center justify-center p-6">
+                <p className="text-[15px] text-gray-600">Loading…</p>
             </main>
         );
     }
@@ -228,65 +247,101 @@ export default function ClinicianReviewPage() {
     const discharge = result?.dischargeSection;
 
     return (
-        <main className="max-w-4xl mx-auto p-6 space-y-6">
+        <main className="min-h-dvh bg-warmBase py-8 px-4 sm:px-6">
+            <div className="max-w-4xl mx-auto space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-semibold">Clinician Review</h1>
-                <div className="flex items-center gap-3">
-                    <Link href="/results" className="text-sm text-blue-600">
-                        View patient results →
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                <div>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-sage mb-1">Internal review</p>
+                    <h1 className="text-2xl sm:text-3xl font-serif font-bold text-navy flex items-center gap-2">
+                        <Stethoscope className="w-8 h-8 text-teal shrink-0" strokeWidth={1.75} aria-hidden />
+                        Clinician review
+                    </h1>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                        href="/results"
+                        className="inline-flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl text-sm font-semibold text-navy bg-white border border-gray-200 hover:bg-sand/50 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30"
+                    >
+                        Patient results
+                        <ExternalLink className="w-4 h-4 shrink-0 opacity-60" strokeWidth={2} aria-hidden />
                     </Link>
-                    <Link href="/upload" className="text-sm text-blue-600">
-                        Upload new →
+                    <Link
+                        href="/upload"
+                        className="inline-flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl text-sm font-semibold text-teal hover:text-navy motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30"
+                    >
+                        <Upload className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden />
+                        Upload new
                     </Link>
                 </div>
             </div>
 
             {/* Toast */}
             {toast && (
-                <div className="fixed bottom-6 right-6 bg-black text-white text-sm px-4 py-2 rounded shadow">
+                <div
+                    role="status"
+                    aria-live="polite"
+                    className="fixed bottom-6 right-6 z-50 bg-navy text-white text-sm px-4 py-3 rounded-xl shadow-lg max-w-sm"
+                >
                     {toast}
                 </div>
             )}
 
             {/* Safety banner */}
-            <section className="border rounded-lg p-4 bg-amber-50">
-                <h2 className="font-medium">Educational Use Only</h2>
-                <p className="text-sm text-amber-900 mt-1">
-                    This view is for review/triage support. It does not diagnose or recommend treatment. Verify against the source
+            <section className="rounded-2xl border border-amber/25 bg-amber-light/40 p-5">
+                <h2 className="font-semibold text-navy">Educational use only</h2>
+                <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+                    For review and triage support. Does not diagnose or recommend treatment. Always verify against the source
                     document.
                 </p>
             </section>
 
             {/* Actions */}
             <section className="flex flex-wrap gap-2">
-                <button onClick={onCopyNote} className="px-3 py-2 rounded border text-sm hover:bg-gray-50">
+                <button
+                    type="button"
+                    onClick={onCopyNote}
+                    className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold bg-navy text-white hover:bg-navy-light motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/40 focus-visible:ring-offset-2"
+                >
+                    <ClipboardCopy className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden />
                     Copy clinician note
                 </button>
-                <button onClick={onCopyJSON} className="px-3 py-2 rounded border text-sm hover:bg-gray-50">
+                <button
+                    type="button"
+                    onClick={onCopyJSON}
+                    className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold bg-white border border-gray-200 text-navy hover:bg-sand/40 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-offset-2"
+                >
+                    <FileJson className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden />
                     Copy JSON
                 </button>
                 {requestId && (
-                    <button onClick={onCopyRequestId} className="px-3 py-2 rounded border text-sm hover:bg-gray-50">
+                    <button
+                        type="button"
+                        onClick={onCopyRequestId}
+                        className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold bg-white border border-gray-200 text-navy hover:bg-sand/40 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-offset-2"
+                    >
+                        <Hash className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden />
                         Copy request ID
                     </button>
                 )}
                 <button
+                    type="button"
                     onClick={onClear}
-                    className="px-3 py-2 rounded border text-sm hover:bg-gray-50 text-red-600 border-red-200"
+                    className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold bg-white border border-red-200 text-red-700 hover:bg-red-50 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
                 >
+                    <Trash2 className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden />
                     Clear stored analysis
                 </button>
             </section>
 
             {/* Meta */}
-            <section className="border rounded-lg p-4 space-y-2">
-                <h2 className="font-medium">Metadata</h2>
+            <section className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-3">
+                <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Metadata</h2>
                 <div className="text-sm text-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {requestId && (
                         <div>
                             <span className="text-gray-500">Request ID:</span>{" "}
-                            <code className="text-xs bg-gray-100 px-2 py-1 rounded">{String(requestId)}</code>
+                            <code className="text-xs bg-sand px-2 py-1 rounded-lg text-navy">{String(requestId)}</code>
                         </div>
                     )}
                     <div>
@@ -311,17 +366,17 @@ export default function ClinicianReviewPage() {
             </section>
 
             {/* Extraction preview */}
-            <section className="border rounded-lg p-4">
-                <h2 className="font-medium mb-1">Extraction Preview</h2>
-                <p className="text-sm text-gray-500 mb-2">First ~300 characters (scrubbed preview).</p>
-                <pre className="bg-gray-50 p-3 rounded text-sm whitespace-pre-wrap">
+            <section className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">Extraction preview</h2>
+                <p className="text-sm text-gray-500 mb-3">First ~300 characters (scrubbed preview).</p>
+                <pre className="bg-warmBase border border-gray-100 p-3 rounded-lg text-sm whitespace-pre-wrap text-gray-700">
                     {(data as any).extractionPreview || "No preview available."}
                 </pre>
             </section>
 
             {/* Patient summary */}
-            <section className="border rounded-lg p-4 space-y-2">
-                <h2 className="font-medium">Patient-facing summary</h2>
+            <section className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-3">
+                <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Patient-facing summary</h2>
                 <p className="text-sm text-gray-700">{patientSummary?.overallSummary ?? "—"}</p>
                 {keyTakeaways.length > 0 && (
                     <ul className="list-disc ml-5 text-sm text-gray-700">
@@ -334,16 +389,16 @@ export default function ClinicianReviewPage() {
 
             {/* Conditional: Lab report */}
             {docType === "lab_report" && (
-                <section className="border rounded-lg p-4 space-y-3">
-                    <h2 className="font-medium">Labs</h2>
+                <section className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-3">
+                    <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Labs</h2>
                     <p className="text-sm text-gray-700">{result?.labsSection?.overallLabNote ?? "—"}</p>
 
                     {labs.length === 0 ? (
                         <div className="text-sm text-gray-500">No labs parsed (empty array).</div>
                     ) : (
                         <div className="overflow-auto">
-                            <table className="min-w-full text-sm border">
-                                <thead className="bg-gray-50">
+                            <table className="min-w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+                                <thead className="bg-sand text-navy">
                                     <tr>
                                         <th className="text-left p-2 border">Test</th>
                                         <th className="text-left p-2 border">Value</th>
@@ -373,8 +428,10 @@ export default function ClinicianReviewPage() {
 
             {/* Conditional: Discharge instructions / summary */}
             {(docType === "discharge_instructions" || docType === "discharge_summary") && (
-                <section className="border rounded-lg p-4 space-y-3">
-                    <h2 className="font-medium">Discharge details ({docType})</h2>
+                <section className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-3">
+                    <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                        Discharge details <span className="font-mono text-[10px] normal-case">({docType})</span>
+                    </h2>
 
                     {!discharge ? (
                         <div className="text-sm text-gray-500">No dischargeSection present.</div>
@@ -407,8 +464,8 @@ export default function ClinicianReviewPage() {
                             )}
 
                             {Array.isArray(discharge?.warningSignsFromDoc) && discharge.warningSignsFromDoc.length > 0 && (
-                                <div className="p-3 rounded bg-yellow-50 border border-yellow-100">
-                                    <div className="font-medium">Warning signs (from document)</div>
+                                <div className="p-3 rounded-lg bg-amber-light/50 border border-amber/25">
+                                    <div className="font-semibold text-navy">Warning signs (from document)</div>
                                     <ul className="list-disc ml-5">
                                         {discharge.warningSignsFromDoc.map((s: { symptom: string, action: string }, i: number) => (
                                             <li key={i}>
@@ -421,9 +478,9 @@ export default function ClinicianReviewPage() {
                             )}
 
                             {Array.isArray(discharge?.generalRedFlags) && discharge.generalRedFlags.length > 0 && (
-                                <div className="p-3 rounded bg-red-50 border border-red-100">
-                                    <div className="font-medium">General red flags</div>
-                                    <ul className="list-disc ml-5">
+                                <div className="p-3 rounded-lg bg-customRed-light border border-customRed/20">
+                                    <div className="font-semibold text-customRed">General red flags</div>
+                                    <ul className="list-disc ml-5 text-gray-800 mt-1">
                                         {discharge.generalRedFlags.map((s: string, i: number) => (
                                             <li key={i}>{s}</li>
                                         ))}
@@ -432,8 +489,8 @@ export default function ClinicianReviewPage() {
                             )}
 
                             {Array.isArray((result as any)?.imagingAndProcedures) && (result as any).imagingAndProcedures.length > 0 && (
-                                <div className="p-3 rounded bg-blue-50 border border-blue-100">
-                                    <div className="font-medium">Imaging & Procedures</div>
+                                <div className="p-3 rounded-lg bg-teal-light/50 border border-teal/25">
+                                    <div className="font-semibold text-navy">Imaging &amp; procedures</div>
                                     <ul className="list-disc ml-5">
                                         {(result as any).imagingAndProcedures.map((s: any, i: number) => (
                                             <li key={i}>{s.name}: {s.findingsPlain || s.findings}</li>
@@ -447,8 +504,8 @@ export default function ClinicianReviewPage() {
             )}
 
             {/* Questions */}
-            <section className="border rounded-lg p-4">
-                <h2 className="font-medium mb-2">Questions (patient-facing)</h2>
+            <section className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">Questions (patient-facing)</h2>
                 {questions.length === 0 ? (
                     <p className="text-sm text-gray-500">None provided.</p>
                 ) : (
@@ -461,8 +518,8 @@ export default function ClinicianReviewPage() {
             </section>
 
             {/* Uncertainties */}
-            <section className="border rounded-lg p-4">
-                <h2 className="font-medium mb-2">What we could not determine</h2>
+            <section className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">What we could not determine</h2>
                 {notDetermined.length === 0 ? (
                     <p className="text-sm text-gray-500">None.</p>
                 ) : (
@@ -475,8 +532,8 @@ export default function ClinicianReviewPage() {
             </section>
 
             {/* Safety */}
-            <section className="border rounded-lg p-4 space-y-2">
-                <h2 className="font-medium">Safety information</h2>
+            <section className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-3">
+                <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Safety information</h2>
                 <p className="text-sm text-gray-800">{safety?.disclaimer ?? "—"}</p>
 
                 {Array.isArray(safety?.limitations) && safety.limitations.length > 0 && (
@@ -491,17 +548,22 @@ export default function ClinicianReviewPage() {
                 )}
 
                 {safety?.emergencyNote && (
-                    <div className="p-3 rounded bg-red-50 border border-red-100">
-                        <div className="text-sm font-medium text-red-900">Emergency note</div>
-                        <p className="text-sm text-red-900 mt-1">{safety.emergencyNote}</p>
+                    <div className="p-3 rounded-lg bg-customRed-light border border-customRed/30">
+                        <div className="text-sm font-semibold text-customRed">Emergency note</div>
+                        <p className="text-sm text-customRed mt-1 leading-relaxed">{safety.emergencyNote}</p>
                     </div>
                 )}
             </section>
 
-            <div className="text-center">
-                <Link href="/" className="text-sm text-gray-600">
-                    Back to Home
+            <div className="text-center pb-8">
+                <Link
+                    href="/"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-navy motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 rounded-lg px-2 py-2"
+                >
+                    <Home className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden />
+                    Back to home
                 </Link>
+            </div>
             </div>
         </main>
     );

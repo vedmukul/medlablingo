@@ -20,6 +20,13 @@ import { z } from "zod";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DocumentTypeSchema = z.enum(["lab_report", "discharge_instructions", "discharge_summary"]);
+/** Allowed on analyze API requests; server resolves to DocumentTypeSchema in the result. */
+const RequestDocumentTypeSchema = z.enum([
+    "lab_report",
+    "discharge_instructions",
+    "discharge_summary",
+    "auto",
+]);
 const ReadingLevelSchema = z.enum(["simple", "standard"]);
 const ProvenanceSourceSchema = z.enum(["pdf_upload", "ehr_fhir", "paste"]);
 
@@ -407,6 +414,7 @@ export function isDischargeSummary(
 
 export {
     DocumentTypeSchema,
+    RequestDocumentTypeSchema,
     ReadingLevelSchema,
     ProvenanceSourceSchema,
     LabFlagSchema,

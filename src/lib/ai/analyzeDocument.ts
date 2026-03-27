@@ -13,7 +13,7 @@ import { US_ESCALATION_DEFAULTS } from "../safety/escalationDefaults";
  */
 export interface AnalyzeDocumentInput {
     text: string;
-    documentType: "lab_report" | "discharge_instructions" | "discharge_summary";
+    documentType: "lab_report" | "discharge_instructions" | "discharge_summary" | "auto";
     readingLevel: "simple" | "standard";
     /** Redacted text length + truncation flag for traceability (pillar 2) */
     extractionContext?: {
@@ -435,11 +435,49 @@ function normalizeMedicationReconciliation(raw: any): Array<{ name: string; stat
  * Rather than trusting the LLM for metadata we already know, this function
  * force-overrides meta fields from the original request and whitelists
  * every key at every nesting level so `.strict()` schemas always pass.
+ *
+ * When the request used documentType "auto", meta.documentType is taken from the model
+ * output when valid, otherwise inferred from which sections the model populated.
  */
+type ResolvedDocumentType = "lab_report" | "discharge_instructions" | "discharge_summary";
+
+function resolveEffectiveDocumentType(
+    known: ResolvedDocumentType | "auto",
+    raw: any
+): ResolvedDocumentType {
+    if (known !== "auto") return known;
+    const fromMeta = raw?.meta?.documentType;
+    if (
+        fromMeta === "lab_report" ||
+        fromMeta === "discharge_instructions" ||
+        fromMeta === "discharge_summary"
+    ) {
+        return fromMeta;
+    }
+    const labs = raw?.labsSection?.labs;
+    const labCount = Array.isArray(labs) ? labs.length : 0;
+    const dc = raw?.dischargeSection;
+    const hasDischarge =
+        dc &&
+        typeof dc === "object" &&
+        !Array.isArray(dc) &&
+        (
+            (Array.isArray(dc.medications) && dc.medications.length > 0) ||
+            (Array.isArray(dc.homeCareSteps) && dc.homeCareSteps.length > 0) ||
+            (Array.isArray(dc.followUp) && dc.followUp.length > 0) ||
+            (Array.isArray(dc.warningSignsFromDoc) && dc.warningSignsFromDoc.length > 0) ||
+            (Array.isArray(dc.diagnosesMentionedInDoc) && dc.diagnosesMentionedInDoc.length > 0)
+        );
+    if (hasDischarge && labCount >= 1) return "discharge_summary";
+    if (labCount >= 1) return "lab_report";
+    if (hasDischarge) return "discharge_instructions";
+    return "discharge_summary";
+}
+
 function postProcessResponse(
     response: unknown,
     modelInfo: ModelInfo,
-    knownDocumentType: "lab_report" | "discharge_instructions" | "discharge_summary",
+    knownDocumentType: ResolvedDocumentType | "auto",
     knownReadingLevel: "simple" | "standard",
     extractionContext?: { analyzedCharacterCount: number; textWasTruncated: boolean }
 ): unknown {
@@ -448,11 +486,12 @@ function postProcessResponse(
     }
 
     const raw = response as any;
+    const effectiveType = resolveEffectiveDocumentType(knownDocumentType, raw);
 
-    // ── 1. Enforce section exclusivity based on the REQUESTED type ──
-    if (knownDocumentType === "lab_report") {
+    // ── 1. Enforce section exclusivity based on resolved type ──
+    if (effectiveType === "lab_report") {
         delete raw.dischargeSection;
-    } else if (knownDocumentType === "discharge_instructions") {
+    } else if (effectiveType === "discharge_instructions") {
         delete raw.labsSection;
     }
     if (raw.dischargeSection === null) delete raw.dischargeSection;
@@ -527,7 +566,7 @@ function postProcessResponse(
     result.meta = {
         schemaVersion: "1.3.0" as const,
         createdAt,
-        documentType: knownDocumentType,
+        documentType: effectiveType,
         readingLevel: knownReadingLevel,
         language: typeof rawMeta.language === "string" ? rawMeta.language : "en",
         provenance: { source: "pdf_upload" as const },
@@ -708,7 +747,7 @@ function postProcessResponse(
             diagnosesMentionedInDoc: coerceToStringArray(findByAlias(rawDC, ["diagnosesMentionedInDoc", "diagnoses", "diagnosis", "diagnosesMentioned", "conditions"])),
         };
 
-        if (knownDocumentType === "discharge_summary") {
+        if (effectiveType === "discharge_summary") {
             const followUpStructured = findByAlias(rawDC, ["followUpStructured", "follow_up_structured", "appointments"]);
             if (Array.isArray(followUpStructured)) {
                 result.dischargeSection.followUpStructured = followUpStructured.map((f: any) => {
@@ -747,7 +786,7 @@ function postProcessResponse(
         }
     }
 
-    if (knownDocumentType === "discharge_summary") {
+    if (effectiveType === "discharge_summary") {
         const rawImaging = findByAlias(raw, ["imagingAndProcedures", "imaging_and_procedures", "imaging", "procedures"]);
         if (Array.isArray(rawImaging)) {
             result.imagingAndProcedures = rawImaging.map((i: any) => {
@@ -796,13 +835,13 @@ function postProcessResponse(
     // ── 7. Guarantee the required section exists ──
     // Claude sometimes ignores the requested type and returns the wrong section.
     // After deleting the wrong section above, the required one may be missing.
-    if (knownDocumentType === "lab_report" && !result.labsSection) {
+    if (effectiveType === "lab_report" && !result.labsSection) {
         result.labsSection = {
             overallLabNote: "No lab-specific data could be extracted from this document.",
             labs: [],
         };
     }
-    if ((knownDocumentType === "discharge_instructions" || knownDocumentType === "discharge_summary") && !result.dischargeSection) {
+    if ((effectiveType === "discharge_instructions" || effectiveType === "discharge_summary") && !result.dischargeSection) {
         result.dischargeSection = {
             status: "draft" as const,
             homeCareSteps: [],
@@ -845,7 +884,7 @@ function postProcessResponse(
  * Now includes guidance on confidence scoring
  */
 export function buildSystemPrompt(
-    documentType: "lab_report" | "discharge_instructions" | "discharge_summary",
+    documentType: "lab_report" | "discharge_instructions" | "discharge_summary" | "auto",
     readingLevel: "simple" | "standard"
 ): string {
     const readingLevelGuidance =
@@ -853,13 +892,7 @@ export function buildSystemPrompt(
             ? "Use 5th-grade plain English. Avoid all medical jargon. Explain concepts using simple everyday analogies.\n"
             : "Use clear, standard clinical English. Explain complex medical terms briefly when first used. Keep tone professional but accessible.\n";
 
-    let optLabText = "";
-    if (documentType === "lab_report") {
-        optLabText = "- labsSection: analysis of lab results (REQUIRED). Do NOT include dischargeSection at all.\n";
-    } else if (documentType === "discharge_instructions") {
-        optLabText = "- dischargeSection: discharge instructions breakdown (REQUIRED). Do NOT include labsSection at all.\n";
-    } else {
-        optLabText = `When documentType is "discharge_summary":
+    const hybridExtractionRules = `When documentType is "discharge_summary":
 
 You are analyzing a comprehensive medical discharge summary. These documents are hybrid —
 they contain BOTH clinical data (lab results, imaging, procedures) AND patient instructions
@@ -1057,7 +1090,26 @@ LAB EXTRACTION RULES — MANDATORY:
    If a value would be abnormal in adults but normal in neonates, explicitly note this
    to prevent parental anxiety from Googling adult ranges.`;
 
+    let optLabText = "";
+    if (documentType === "lab_report") {
+        optLabText = "- labsSection: analysis of lab results (REQUIRED). Do NOT include dischargeSection at all.\n";
+    } else if (documentType === "discharge_instructions") {
+        optLabText = "- dischargeSection: discharge instructions breakdown (REQUIRED). Do NOT include labsSection at all.\n";
+    } else if (documentType === "discharge_summary") {
+        optLabText = hybridExtractionRules;
+    } else {
+        optLabText =
+            "AUTO DOCUMENT TYPE: The patient did not choose a category. Read the PDF, pick exactly ONE of lab_report | discharge_instructions | discharge_summary, set meta.documentType to that value, and output JSON that matches ONLY that variant (invalid section combinations will fail).\n" +
+            "- lab_report: standalone lab/pathology/blood work. REQUIRED labsSection; OMIT dischargeSection entirely.\n" +
+            "- discharge_instructions: visit summary / home instructions / meds without labs as the main content. REQUIRED dischargeSection; OMIT labsSection entirely.\n" +
+            "- discharge_summary: full hospital discharge summary OR clear hybrid (meaningful labs or imaging PLUS discharge/care instructions). When you choose this type, apply every hybrid rule below.\n\n" +
+            hybridExtractionRules;
     }
+
+    const documentTypePromptLabel =
+        documentType === "auto"
+            ? "auto — classify the PDF; set meta.documentType to lab_report, discharge_instructions, or discharge_summary and match that variant's schema exactly"
+            : documentType;
 
     const redactionHandling = `
 REDACTION HANDLING:
@@ -1085,7 +1137,7 @@ takeaways, instructions), you must:
         "3. DO NOT insert safety disclaimers or tell the patient \"Please consult your doctor to understand this\" in your summaries. Our application UI handles all medical disclaimers automatically. Just provide the educational explanation.\n" +
         "4. Never diagnose conditions, recommend treatments, or suggest medication changes.\n\n" +
         "Your role is strictly to help patients understand what their documents say and prepare questions for their doctors.\n\n" +
-        "DOCUMENT TYPE: " + documentType + "\n" +
+        "DOCUMENT TYPE: " + documentTypePromptLabel + "\n" +
         "READING LEVEL: " + readingLevel + "\n" +
         "STYLE GUIDANCE: " + readingLevelGuidance + "\n\n" +
         "CONFIDENCE SCORING GUIDELINES:\n" +
@@ -1101,7 +1153,7 @@ takeaways, instructions), you must:
         "- Respond with ONLY valid JSON\n" +
         "- Do NOT include markdown code fences (```json)\n" +
         "- Do NOT include any explanatory text before or after the JSON\n" +
-        "- The JSON must exactly match the required schema for " + documentType + "\n" +
+        "- The JSON must exactly match the required schema for " + documentTypePromptLabel + "\n" +
         "- Include modelInfo will be added automatically (do not include it)\n\n" +
         "REQUIRED FIELDS:\n" +
         "- meta: metadata (schemaVersion: \"1.3.0\", createdAt, documentType, readingLevel, language, provenance, safety). Do NOT include modelInfo or traceability — the server adds them.\n" +
@@ -1121,8 +1173,27 @@ takeaways, instructions), you must:
  */
 function buildUserPrompt(
     redactedText: string,
-    documentType: "lab_report" | "discharge_instructions" | "discharge_summary"
+    documentType: "lab_report" | "discharge_instructions" | "discharge_summary" | "auto"
 ): string {
+    if (documentType === "auto") {
+        return (
+            "Analyze this medical PDF. The user did not specify the document type.\n\n" +
+            "1) Classify the document as exactly one of: lab_report, discharge_instructions, discharge_summary.\n" +
+            "2) Set meta.documentType to that value.\n" +
+            "3) Return JSON that matches only that variant (omit forbidden sections entirely).\n\n" +
+            "Document text:\n" +
+            redactedText +
+            "\n\nRemember:\n" +
+            "1. Output ONLY valid JSON (no markdown, no extra text)\n" +
+            "2. lab_report → labsSection only; no dischargeSection\n" +
+            "3. discharge_instructions → dischargeSection only; no labsSection\n" +
+            "4. discharge_summary → hybrid; include labsSection when labs are present and dischargeSection when instructions/summary content exists; add imaging/discontinued meds/immunizations only for this type\n" +
+            "5. Explain what the document says; do not give personalized medical advice\n" +
+            "6. Omit confidence fields if unsure\n" +
+            "7. Add documentAnchors and escalationGuidance when the document supports them"
+        );
+    }
+
     const docTypeStr = documentType.replace("_", " ");
     const includeStr = documentType === "lab_report"
         ? "Include labsSection. Do NOT include dischargeSection."
@@ -1165,7 +1236,7 @@ If any checkbox fails, go back and fix it before responding.`;
  */
 function buildRetryPrompt(
     redactedText: string,
-    documentType: "lab_report" | "discharge_instructions" | "discharge_summary",
+    documentType: "lab_report" | "discharge_instructions" | "discharge_summary" | "auto",
     previousResponse: string,
     validationError: any
 ): string {
@@ -1175,7 +1246,13 @@ function buildRetryPrompt(
         .map((e: any) => "- " + (e.path ?? []).join(".") + ": " + e.message)
         .join("\n");
 
+    const autoHint =
+        documentType === "auto"
+            ? "Ensure meta.documentType is lab_report, discharge_instructions, or discharge_summary and that forbidden sections are omitted for that variant.\n\n"
+            : "";
+
     return "Your previous response had validation errors. Please fix them and output ONLY the corrected JSON.\n\n" +
+        autoHint +
         "Document text:\n" +
         redactedText + "\n\n" +
         "Previous response (INVALID):\n" +
@@ -1189,9 +1266,10 @@ function buildRetryPrompt(
  * Returns mock analysis result for testing without API key
  */
 function getMockAnalysisResult(
-    documentType: "lab_report" | "discharge_instructions" | "discharge_summary",
+    documentType: "lab_report" | "discharge_instructions" | "discharge_summary" | "auto",
     readingLevel: "simple" | "standard"
 ): AnalysisResult {
+    const mockType = documentType === "auto" ? "discharge_summary" : documentType;
     const mockEscalation = {
         callEmergencyIf: [...DEFAULT_ESCALATION.callEmergencyIf],
         seekUrgentCareIf: [...DEFAULT_ESCALATION.seekUrgentCareIf],
@@ -1201,7 +1279,7 @@ function getMockAnalysisResult(
     const baseMeta = {
         schemaVersion: "1.3.0" as const,
         createdAt: new Date().toISOString(),
-        documentType,
+        documentType: mockType,
         readingLevel,
         language: "en",
         provenance: {
@@ -1231,7 +1309,7 @@ function getMockAnalysisResult(
         },
     };
 
-    if (documentType === "lab_report") {
+    if (mockType === "lab_report") {
         return {
             meta: { ...baseMeta, documentType: "lab_report" as const },
             patientSummary: {
@@ -1316,7 +1394,7 @@ function getMockAnalysisResult(
             },
             dischargeSection: undefined,
         };
-    } else if (documentType === "discharge_summary") {
+    } else if (mockType === "discharge_summary") {
         return {
             meta: {
                 ...baseMeta,

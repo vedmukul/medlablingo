@@ -18,11 +18,15 @@ export const metadata: Metadata = {
     description: "Educational lab analysis tool",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
+    params,
 }: Readonly<{
     children: React.ReactNode;
+    params: Promise<Record<string, string | string[] | undefined>>;
 }>) {
+    await params;
+
     return (
         <html lang="en">
             <body className={`${dmSans.variable} ${dmSerif.variable} font-sans bg-sand text-navy`}>

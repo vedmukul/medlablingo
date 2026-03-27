@@ -9,7 +9,10 @@ import { auditComplianceEvent } from "@/lib/compliance/audit";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase/supabaseClient";
 import { getDeviceId } from "@/lib/supabase/deviceId";
 
-export type DocumentType = "lab_report" | "discharge_instructions";
+export type DocumentType =
+    | "lab_report"
+    | "discharge_instructions"
+    | "discharge_summary";
 export type ReadingLevel = "simple" | "standard";
 
 export interface AnalysisApiResponse {

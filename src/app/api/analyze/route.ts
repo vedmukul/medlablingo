@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { extractText } from "@/lib/pdf/extractText";
-import { DocumentTypeSchema, ReadingLevelSchema } from "@/contracts/analysisSchema";
+import { RequestDocumentTypeSchema, ReadingLevelSchema } from "@/contracts/analysisSchema";
 import { z } from "zod";
 import { analyzeDocument } from "@/lib/ai";
 import { safetyFilter } from "@/lib/safety/safetyFilter";
@@ -17,7 +17,7 @@ export const runtime = "nodejs";
 
 // Input validation schema
 const RequestSchema = z.object({
-    documentType: DocumentTypeSchema,
+    documentType: RequestDocumentTypeSchema,
     readingLevel: ReadingLevelSchema,
 });
 
@@ -238,7 +238,8 @@ export async function POST(request: Request) {
         logger.info({
             eventName: "analyze.completed",
             route,
-            documentType: dt,
+            documentType: safeAnalysis.meta.documentType,
+            requestedDocumentType: dt,
             readingLevel: rl,
             extractedTextLength: extractedText.length,
             previewLength: extractionPreview.length,
@@ -247,10 +248,10 @@ export async function POST(request: Request) {
             ...getProgressMetadata(),
         });
 
-        // 9) Return safe payload + header
+        // 9) Return safe payload + header (top-level documentType = resolved analysis type for UI/history)
         const res = NextResponse.json({
             ok: true,
-            documentType: dt,
+            documentType: safeAnalysis.meta.documentType,
             readingLevel: rl,
             extractedTextLength: extractedText.length,
             extractionPreview,
