@@ -1,41 +1,53 @@
-import Link from 'next/link';
-import { DisclaimerBanner } from '@/components/DisclaimerBanner';
+import Link from "next/link";
+import { ClipboardList, FlaskConical, History } from "lucide-react";
+import { DisclaimerBanner } from "@/components/DisclaimerBanner";
+
+const ctaBase =
+    "w-full min-h-[48px] flex items-center justify-center gap-3 px-6 py-3.5 rounded-xl text-[16px] font-semibold motion-safe:transition-colors motion-safe:duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-warmBase";
 
 export default function Home() {
     return (
-        <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-            <div className="max-w-md w-full space-y-8">
-                <div className="text-center">
-                    <h1 className="text-4xl font-extrabold text-indigo-600 tracking-tight sm:text-5xl">
+        <main className="min-h-dvh bg-warmBase flex flex-col items-center justify-center p-6">
+            <div className="max-w-lg w-full space-y-8">
+                <header className="text-center space-y-2">
+                    <p className="text-[12px] font-bold uppercase tracking-widest text-sage">Patient-friendly summaries</p>
+                    <h1 className="text-4xl sm:text-5xl font-serif font-bold text-navy tracking-tight">
                         MedLabLingo
                     </h1>
-                    <p className="mt-2 text-base text-gray-500">
-                        Understand your medical documents with AI.
+                    <p className="text-[15px] text-gray-600 leading-relaxed max-w-sm mx-auto">
+                        Turn lab reports and discharge paperwork into plain language you can use at home and with your care team.
                     </p>
-                </div>
+                </header>
 
                 <DisclaimerBanner />
 
-                <div className="space-y-4">
+                <nav aria-label="Start with a document type" className="space-y-3">
                     <Link
                         href="/upload?documentType=lab_report"
-                        className="w-full flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:text-xl md:px-10 shadow-sm transition-colors"
+                        className={`${ctaBase} bg-navy text-white hover:bg-navy-light focus-visible:ring-navy/50 shadow-sm`}
                     >
-                        Understand My Lab Report
+                        <FlaskConical className="w-5 h-5 shrink-0 opacity-90" strokeWidth={1.75} aria-hidden />
+                        Understand my lab report
                     </Link>
                     <Link
                         href="/upload?documentType=discharge_instructions"
-                        className="w-full flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 md:text-xl md:px-10 shadow-sm transition-colors"
+                        className={`${ctaBase} bg-sand text-navy border border-sand-dark hover:bg-sand-dark/80 focus-visible:ring-navy/35 shadow-sm`}
                     >
-                        Understand My Discharge Instructions
+                        <ClipboardList className="w-5 h-5 shrink-0 text-teal" strokeWidth={1.75} aria-hidden />
+                        Understand my discharge instructions
                     </Link>
-                </div>
+                    <Link
+                        href="/history"
+                        className={`${ctaBase} bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:text-navy focus-visible:ring-navy/30 text-[15px] font-medium`}
+                    >
+                        <History className="w-5 h-5 shrink-0 text-gray-400" strokeWidth={1.75} aria-hidden />
+                        View history &amp; trends
+                    </Link>
+                </nav>
 
-                <div className="text-center text-xs text-gray-400 mt-8">
-                    <p>
-                        Your privacy is important. Documents are processed securely and not stored permanently.
-                    </p>
-                </div>
+                <p className="text-center text-[12px] text-gray-500 leading-relaxed px-2">
+                    Your privacy matters. Text is processed to generate a summary; we do not keep your full document on our servers.
+                </p>
             </div>
         </main>
     );

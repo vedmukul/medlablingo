@@ -2,7 +2,9 @@
 "use client";
 
 import React, { useState, useEffect, Suspense, useRef } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { FileUp, Shield } from "lucide-react";
 import { Loading } from "@/components/Loading";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { saveAnalysis } from "@/lib/persistence/analysisStorage";
@@ -279,7 +281,7 @@ function UploadForm() {
                 <Loading />
                 <div className="mt-6 text-center max-w-md">
                     {progressMessage && (
-                        <p className="text-lg font-medium text-indigo-600 mb-4">
+                        <p className="text-lg font-medium text-navy mb-4">
                             {progressMessage}
                         </p>
                     )}
@@ -313,8 +315,8 @@ function UploadForm() {
     }
 
     return (
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <form className="space-y-6" onSubmit={handleSubmit}>
+        <div className="bg-white py-8 px-4 sm:px-10 rounded-2xl border border-gray-100 shadow-sm">
+            <form className="space-y-6" onSubmit={handleSubmit} noValidate>
                 {error && (
                     <div className="bg-red-50 border-l-4 border-red-400 p-4">
                         <div className="flex">
@@ -343,28 +345,67 @@ function UploadForm() {
                     </div>
                 )}
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Document Type
-                    </label>
+                <fieldset>
+                    <legend className="block text-sm font-medium text-gray-700 mb-2">
+                        Document type
+                    </legend>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <label className={`cursor-pointer rounded-lg border p-3 flex flex-col items-center text-center transition-colors ${documentType === 'lab_report' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'}`}>
-                            <input type="radio" name="documentType" value="lab_report" checked={documentType === 'lab_report'} onChange={(e) => setDocumentType(e.target.value)} className="sr-only" />
-                            <span className="font-medium text-sm">Lab Report</span>
-                            <span className="text-xs mt-1 opacity-70">Blood work, pathology</span>
+                        <label
+                            className={`cursor-pointer rounded-xl border p-3 min-h-[72px] flex flex-col items-center justify-center text-center motion-safe:transition-colors focus-within:ring-2 focus-within:ring-navy/35 focus-within:ring-offset-2 ${
+                                documentType === "lab_report"
+                                    ? "border-navy bg-sand text-navy shadow-sm"
+                                    : "border-gray-200 hover:border-teal/40 hover:bg-warmBase"
+                            }`}
+                        >
+                            <input
+                                type="radio"
+                                name="documentType"
+                                value="lab_report"
+                                checked={documentType === "lab_report"}
+                                onChange={(e) => setDocumentType(e.target.value)}
+                                className="sr-only"
+                            />
+                            <span className="font-medium text-sm">Lab report</span>
+                            <span className="text-xs mt-1 text-gray-500">Blood work, pathology</span>
                         </label>
-                        <label className={`cursor-pointer rounded-lg border p-3 flex flex-col items-center text-center transition-colors ${documentType === 'discharge_instructions' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'}`}>
-                            <input type="radio" name="documentType" value="discharge_instructions" checked={documentType === 'discharge_instructions'} onChange={(e) => setDocumentType(e.target.value)} className="sr-only" />
-                            <span className="font-medium text-sm">Basic Instructions</span>
-                            <span className="text-xs mt-1 opacity-70">Simple home steps</span>
+                        <label
+                            className={`cursor-pointer rounded-xl border p-3 min-h-[72px] flex flex-col items-center justify-center text-center motion-safe:transition-colors focus-within:ring-2 focus-within:ring-navy/35 focus-within:ring-offset-2 ${
+                                documentType === "discharge_instructions"
+                                    ? "border-navy bg-sand text-navy shadow-sm"
+                                    : "border-gray-200 hover:border-teal/40 hover:bg-warmBase"
+                            }`}
+                        >
+                            <input
+                                type="radio"
+                                name="documentType"
+                                value="discharge_instructions"
+                                checked={documentType === "discharge_instructions"}
+                                onChange={(e) => setDocumentType(e.target.value)}
+                                className="sr-only"
+                            />
+                            <span className="font-medium text-sm">Basic instructions</span>
+                            <span className="text-xs mt-1 text-gray-500">Simple home steps</span>
                         </label>
-                        <label className={`cursor-pointer rounded-lg border p-3 flex flex-col items-center text-center transition-colors ${documentType === 'discharge_summary' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'}`}>
-                            <input type="radio" name="documentType" value="discharge_summary" checked={documentType === 'discharge_summary'} onChange={(e) => setDocumentType(e.target.value)} className="sr-only" />
-                            <span className="font-medium text-sm">Discharge Summary</span>
-                            <span className="text-xs mt-1 opacity-70">Full hospital records</span>
+                        <label
+                            className={`cursor-pointer rounded-xl border p-3 min-h-[72px] flex flex-col items-center justify-center text-center motion-safe:transition-colors focus-within:ring-2 focus-within:ring-navy/35 focus-within:ring-offset-2 ${
+                                documentType === "discharge_summary"
+                                    ? "border-navy bg-sand text-navy shadow-sm"
+                                    : "border-gray-200 hover:border-teal/40 hover:bg-warmBase"
+                            }`}
+                        >
+                            <input
+                                type="radio"
+                                name="documentType"
+                                value="discharge_summary"
+                                checked={documentType === "discharge_summary"}
+                                onChange={(e) => setDocumentType(e.target.value)}
+                                className="sr-only"
+                            />
+                            <span className="font-medium text-sm">Discharge summary</span>
+                            <span className="text-xs mt-1 text-gray-500">Full hospital packet</span>
                         </label>
                     </div>
-                </div>
+                </fieldset>
 
                 <div>
                     <label
@@ -376,7 +417,7 @@ function UploadForm() {
                     <select
                         id="readingLevel"
                         name="readingLevel"
-                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        className="mt-1 block w-full min-h-[44px] pl-3 pr-10 py-2 text-base border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy/20 sm:text-sm"
                         value={readingLevel}
                         onChange={(e) => setReadingLevel(e.target.value)}
                     >
@@ -390,19 +431,21 @@ function UploadForm() {
                         Upload PDF
                     </label>
                     <div
-                        className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md transition-all ${isDragOver
-                            ? "border-indigo-500 bg-indigo-50"
-                            : "border-gray-300 hover:border-indigo-400"
-                            } ${file ? "bg-green-50 border-green-400" : ""}`}
+                        className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-xl motion-safe:transition-colors outline-none focus-visible:ring-2 focus-visible:ring-navy/35 focus-visible:ring-offset-2 ${
+                            isDragOver
+                                ? "border-teal bg-teal-light/40"
+                                : "border-gray-300 hover:border-teal/50"
+                        } ${file ? "bg-green-50 border-green-400" : "bg-warmBase/50"}`}
                         onDragEnter={handleDragEnter}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                         tabIndex={0}
                         role="button"
-                        aria-label="File upload dropzone"
+                        aria-label="Upload PDF: drop a file here or press Enter to choose"
                         onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
                                 document.getElementById("file-upload")?.click();
                             }
                         }}
@@ -427,7 +470,7 @@ function UploadForm() {
                                     <div className="flex text-sm text-gray-600 justify-center">
                                         <label
                                             htmlFor="file-upload"
-                                            className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
+                                            className="relative cursor-pointer bg-white rounded-lg font-medium text-navy hover:text-teal px-2 py-1 -mx-2 motion-safe:transition-colors focus-within:outline-none focus-within:ring-2 focus-within:ring-navy/35 focus-within:ring-offset-2"
                                         >
                                             <span>Upload a file</span>
                                             <input
@@ -467,7 +510,7 @@ function UploadForm() {
                                         {formatFileSize(file.size)}
                                     </p>
                                     {pdfPreview === "loading" && (
-                                        <p className="text-xs text-indigo-600 mt-3">Checking whether text can be read from your PDF…</p>
+                                        <p className="text-xs text-teal font-medium mt-3">Checking whether text can be read from your PDF…</p>
                                     )}
                                     {pdfPreview && pdfPreview !== "loading" && (
                                         <div
@@ -495,7 +538,7 @@ function UploadForm() {
                                     <button
                                         type="button"
                                         onClick={handleRemoveFile}
-                                        className="mt-3 inline-flex items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                        className="mt-3 inline-flex items-center min-h-[40px] px-3 py-2 border border-red-300 text-xs font-medium rounded-lg text-red-700 bg-white hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-400"
                                     >
                                         <svg
                                             className="h-4 w-4 mr-1"
@@ -522,8 +565,9 @@ function UploadForm() {
                     <button
                         type="submit"
                         disabled={!file || isLoading}
-                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full min-h-[48px] flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-sm text-[15px] font-semibold text-white bg-navy hover:bg-navy-light motion-safe:transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-navy/45 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
+                        <FileUp className="w-5 h-5 shrink-0 opacity-90" strokeWidth={1.75} aria-hidden />
                         {isLoading ? "Processing..." : "Analyze Document"}
                     </button>
                 </div>
@@ -534,46 +578,44 @@ function UploadForm() {
 
 export default function UploadPage() {
     return (
-        <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <main className="min-h-dvh bg-warmBase py-10 px-4 sm:px-6 lg:px-8">
             <div className="max-w-xl mx-auto">
-                <div className="text-center mb-10">
-                    <h2 className="text-3xl font-extrabold text-gray-900">
-                        Upload your document
-                    </h2>
-                    <p className="mt-2 text-sm text-gray-600">
-                        We&apos;ll analyze it and provide a clear summary.
+                <div className="text-center mb-8 space-y-3">
+                    <p className="text-[12px] font-bold uppercase tracking-widest text-sage">Analyze your document</p>
+                    <h1 className="text-3xl sm:text-4xl font-serif font-bold text-navy leading-tight">
+                        Upload a PDF
+                    </h1>
+                    <p className="text-[15px] text-gray-600 max-w-md mx-auto leading-relaxed">
+                        Choose the document type, add your file, and we&apos;ll return a plain-language summary.
                     </p>
+                    <div className="flex flex-wrap items-center justify-center gap-4 pt-1 text-[13px]">
+                        <Link
+                            href="/"
+                            className="text-teal font-semibold hover:text-navy motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/35 focus-visible:rounded"
+                        >
+                            ← Home
+                        </Link>
+                        <Link
+                            href="/history"
+                            className="text-gray-500 hover:text-navy motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/35 focus-visible:rounded"
+                        >
+                            History &amp; trends
+                        </Link>
+                    </div>
                 </div>
 
                 <DisclaimerBanner />
 
-                {/* Privacy & Safety Notice */}
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
-                    <div className="flex">
-                        <div className="flex-shrink-0">
-                            <svg
-                                className="h-5 w-5 text-blue-400"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                            >
-                                <path
-                                    fillRule="evenodd"
-                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                    clipRule="evenodd"
-                                />
-                            </svg>
-                        </div>
-                        <div className="ml-3">
-                            <h3 className="text-sm font-medium text-blue-900">Privacy & Safety</h3>
-                            <div className="mt-2 text-xs text-blue-800">
-                                <ul className="list-disc list-inside space-y-1">
-                                    <li>Analysis stored locally for <strong>24 hours</strong></li>
-                                    <li>Text is <strong>redacted</strong> before analysis (removes emails, phone numbers, etc.)</li>
-                                    <li>No full document text stored in your browser</li>
-                                    <li>Click &quot;Clear saved&quot; anytime to delete</li>
-                                </ul>
-                            </div>
-                        </div>
+                <div className="rounded-xl border border-teal/20 bg-teal-light/40 p-4 mb-6 flex gap-3">
+                    <Shield className="w-5 h-5 shrink-0 text-teal mt-0.5" strokeWidth={1.75} aria-hidden />
+                    <div>
+                        <h2 className="text-sm font-semibold text-navy">Privacy &amp; safety</h2>
+                        <ul className="mt-2 text-xs text-gray-600 space-y-1.5 list-disc list-inside">
+                            <li>Analysis summary kept on this device for about <strong>24 hours</strong></li>
+                            <li>Sensitive patterns are <strong>redacted</strong> before the AI sees your text</li>
+                            <li>We don&apos;t store the full PDF text in your browser long-term</li>
+                            <li>Use &quot;Clear data&quot; on results when you want to remove saved summaries</li>
+                        </ul>
                     </div>
                 </div>
 

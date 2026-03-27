@@ -9,6 +9,7 @@ import {
     type LabTimeline,
 } from "@/lib/persistence/analysisStorage";
 import { LabSparkline } from "@/components/LabSparkline";
+import { BarChart3, ClipboardList, FlaskConical, Pill } from "lucide-react";
 
 function parseReferenceRange(
     refRange: string | null
@@ -77,8 +78,9 @@ export default function HistoryPage() {
             {/* Lab Trends Section */}
             {topTimelines.length > 0 && (
                 <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                    <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-6">
-                        📊 Lab Trends Over Time
+                    <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={1.75} aria-hidden />
+                        Lab trends over time
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {topTimelines.map((timeline) => {
@@ -137,7 +139,9 @@ export default function HistoryPage() {
             {/* Empty state for trends */}
             {topTimelines.length === 0 && (
                 <section className="bg-white border border-dashed border-gray-300 rounded-xl p-12 text-center">
-                    <div className="text-4xl mb-4">📊</div>
+                    <div className="flex justify-center mb-4 text-gray-300" aria-hidden>
+                        <BarChart3 className="w-14 h-14" strokeWidth={1.25} />
+                    </div>
                     <h3 className="text-lg font-serif text-navy mb-2">
                         No Trends Yet
                     </h3>
@@ -156,8 +160,9 @@ export default function HistoryPage() {
 
             {/* Upload History */}
             <section>
-                <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4">
-                    📋 Upload History ({history.length} documents)
+                <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                    <ClipboardList className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={1.75} aria-hidden />
+                    Upload history ({history.length} documents)
                 </h2>
 
                 {history.length === 0 ? (
@@ -200,10 +205,12 @@ export default function HistoryPage() {
                                     className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-navy/30 transition-all group"
                                 >
                                     <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-10 h-10 rounded-full bg-sand text-navy flex items-center justify-center text-lg">
-                                            {entry.documentType === "lab_report"
-                                                ? "🧪"
-                                                : "📋"}
+                                        <div className="w-10 h-10 rounded-full bg-sand text-navy flex items-center justify-center" aria-hidden>
+                                            {entry.documentType === "lab_report" ? (
+                                                <FlaskConical className="w-5 h-5" strokeWidth={1.75} />
+                                            ) : (
+                                                <ClipboardList className="w-5 h-5" strokeWidth={1.75} />
+                                            )}
                                         </div>
                                         <div>
                                             <div className="text-[14px] font-semibold text-navy group-hover:text-navy-light transition-colors">
@@ -225,12 +232,18 @@ export default function HistoryPage() {
                                         </p>
                                     )}
 
-                                    <div className="flex gap-3 text-[11px] text-gray-400">
+                                    <div className="flex flex-wrap gap-3 text-[11px] text-gray-400 items-center">
                                         {labCount > 0 && (
-                                            <span>🧪 {labCount} labs</span>
+                                            <span className="inline-flex items-center gap-1">
+                                                <FlaskConical className="w-3.5 h-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                                                {labCount} labs
+                                            </span>
                                         )}
                                         {medCount > 0 && (
-                                            <span>💊 {medCount} meds</span>
+                                            <span className="inline-flex items-center gap-1">
+                                                <Pill className="w-3.5 h-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                                                {medCount} meds
+                                            </span>
                                         )}
                                         <span className="capitalize">
                                             {entry.readingLevel}

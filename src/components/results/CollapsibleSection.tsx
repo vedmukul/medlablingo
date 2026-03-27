@@ -5,7 +5,8 @@ import React, { useState } from "react";
 interface CollapsibleSectionProps {
     id?: string;
     title: string;
-    icon?: string;
+    /** Prefer Lucide (or other SVG) icons — avoid emoji for structural UI. */
+    icon?: React.ReactNode;
     count?: number;
     preview?: string;
     accentColor?: string; // Tailwind border color class e.g. "border-teal"
@@ -38,12 +39,13 @@ export function CollapsibleSection({
         >
             {/* Header — always visible, clickable */}
             <button
+                type="button"
                 onClick={() => setOpen(!open)}
-                className="w-full flex items-center gap-3 px-5 py-4 text-left group"
+                className="w-full min-h-[44px] flex items-center gap-3 px-5 py-3 sm:py-4 text-left group cursor-pointer rounded-t-xl motion-safe:transition-shadow motion-safe:duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                 aria-expanded={open}
                 aria-controls={id ? `${id}-content` : undefined}
             >
-                {icon && <span className="text-lg flex-shrink-0">{icon}</span>}
+                {icon && <span className="flex-shrink-0 flex items-center justify-center [&_svg]:shrink-0">{icon}</span>}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                         <h3 className="text-[15px] font-semibold text-navy truncate">
@@ -67,7 +69,8 @@ export function CollapsibleSection({
                     )}
                 </div>
                 <svg
-                    className={`w-4 h-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ${open ? "rotate-180" : ""}`}
+                    className={`w-4 h-4 text-gray-400 flex-shrink-0 motion-safe:transition-transform motion-safe:duration-200 ${open ? "rotate-180" : ""}`}
+                    aria-hidden
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -79,7 +82,7 @@ export function CollapsibleSection({
             {/* Content — animated expand/collapse */}
             <div
                 id={id ? `${id}-content` : undefined}
-                className="grid transition-all duration-250 ease-out"
+                className="grid motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out"
                 style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
             >
                 <div className="overflow-hidden">

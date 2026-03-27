@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Respect reduced motion (WCAG / HIG) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer base {
+  a:focus-visible,
+  button:focus-visible,
+  summary:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    @apply outline-none;
+  }
+}
+
 /* Print Styles */
 @media print {
   /* Hide elements that shouldn't be printed */

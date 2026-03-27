@@ -17,6 +17,21 @@ import { FeedbackBar } from "@/components/results/FeedbackBar";
 import { LabsTable } from "@/components/LabsTable";
 import { clearAnalysis, loadAnalysis, loadHistory } from "@/lib/persistence/analysisStorage";
 import { isDischargeSummary } from "@/contracts/analysisSchema";
+import {
+    Apple,
+    BarChart3,
+    CalendarDays,
+    Camera,
+    ClipboardList,
+    EllipsisVertical,
+    FlaskConical,
+    Home,
+    MessageCircleQuestion,
+    Pill,
+    Syringe,
+} from "lucide-react";
+
+const navIconCls = "w-4 h-4 shrink-0 text-gray-400 group-hover:text-navy motion-safe:transition-colors";
 
 export default function ResultsPage() {
     return (
@@ -151,8 +166,9 @@ function ResultsContent() {
                     </Link>
                     <div className="flex-1" />
                     <button
+                        type="button"
                         onClick={() => window.open('/results/print', '_blank')}
-                        className="px-4 py-2 rounded-lg bg-navy text-white text-[13px] font-semibold hover:bg-navy-light transition-colors"
+                        className="min-h-[44px] px-4 py-2 rounded-lg bg-navy text-white text-[13px] font-semibold hover:bg-navy-light motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                     >
                         Export PDF
                     </button>
@@ -164,30 +180,32 @@ function ResultsContent() {
                             activeLanguage={activeLang}
                         />
                     )}
-                    {/* More menu */}
-                    <div className="relative group">
-                        <button className="px-2.5 py-2 rounded-lg border border-gray-200 text-gray-400 text-sm hover:bg-gray-50 transition-colors">
-                            ⋯
-                        </button>
-                        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-lg py-2 w-44 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                            <Link href="/clinician/review" className="block px-4 py-2 text-[13px] text-gray-600 hover:bg-gray-50 transition-colors">
+                    <details className="relative z-40">
+                        <summary className="list-none min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 cursor-pointer motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white [&::-webkit-details-marker]:hidden">
+                            <span className="sr-only">More actions</span>
+                            <EllipsisVertical className="w-5 h-5" aria-hidden strokeWidth={1.75} />
+                        </summary>
+                        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-lg py-2 w-52 z-50">
+                            <Link href="/clinician/review" className="flex items-center gap-2 px-4 py-2.5 text-[13px] text-gray-600 hover:bg-gray-50 motion-safe:transition-colors min-h-[44px]">
                                 Clinician View
                             </Link>
-                            <Link href="/history" className="block px-4 py-2 text-[13px] text-gray-600 hover:bg-gray-50 transition-colors">
-                                📊 History & Trends
+                            <Link href="/history" className="flex items-center gap-2 px-4 py-2.5 text-[13px] text-gray-600 hover:bg-gray-50 motion-safe:transition-colors min-h-[44px]">
+                                <BarChart3 className="w-4 h-4 shrink-0 text-gray-400" aria-hidden strokeWidth={1.75} />
+                                History &amp; trends
                             </Link>
-                            <Link href="/upload" className="block px-4 py-2 text-[13px] text-gray-600 hover:bg-gray-50 transition-colors">
-                                Upload New
+                            <Link href="/upload" className="flex items-center gap-2 px-4 py-2.5 text-[13px] text-gray-600 hover:bg-gray-50 motion-safe:transition-colors min-h-[44px]">
+                                Upload new
                             </Link>
                             <hr className="my-1 border-gray-100" />
                             <button
+                                type="button"
                                 onClick={() => { clearAnalysis(); location.reload(); }}
-                                className="block w-full text-left px-4 py-2 text-[13px] text-red-500 hover:bg-red-50 transition-colors"
+                                className="block w-full text-left px-4 py-2.5 text-[13px] text-red-600 hover:bg-red-50 motion-safe:transition-colors min-h-[44px]"
                             >
-                                Clear Data
+                                Clear data
                             </button>
                         </div>
-                    </div>
+                    </details>
                 </div>
             </header>
 
@@ -214,81 +232,90 @@ function ResultsContent() {
 
                                 {/* ESSENTIALS */}
                                 <span className="hidden lg:block text-[10px] font-bold uppercase tracking-widest text-gray-300 px-3 pt-1 pb-2">Essentials</span>
-                                <a href="#summary" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
+                                <a href="#summary" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal min-h-[44px] flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
                                     Summary
                                 </a>
-                                <a href="#trust-safety" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
+                                <a href="#trust-safety" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal min-h-[44px] flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
                                     Safety &amp; handoff
                                 </a>
                                 {result?.careNavigation && (
-                                    <a href="#care-navigation" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
+                                    <a href="#care-navigation" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal min-h-[44px] flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
                                         Care navigation
                                     </a>
                                 )}
                                 {(result?.medicationReconciliation?.length ?? 0) > 0 && (
-                                    <a href="#med-reconciliation" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
+                                    <a href="#med-reconciliation" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal min-h-[44px] flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
                                         Med reconciliation
                                     </a>
                                 )}
-                                <a href="#quick-safety-check" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
+                                <a href="#quick-safety-check" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal min-h-[44px] flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
                                     Quick safety check
                                 </a>
                                 {warningCount > 0 && (
-                                    <a href="#warning-signs" className="px-3 py-2 rounded-lg hover:bg-amber-light/40 hover:text-amber transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2">
+                                    <a href="#warning-signs" className="px-3 py-2 rounded-lg hover:bg-amber-light/40 hover:text-amber motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber/40 focus-visible:ring-inset">
                                         <span className="w-1.5 h-1.5 rounded-full bg-amber flex-shrink-0" />
                                         Warning Signs
                                     </a>
                                 )}
                                 {medCount > 0 && (
-                                    <a href="#medications" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
-                                        💊 Medications
+                                    <a href="#medications" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
+                                        <Pill className={navIconCls} strokeWidth={1.75} aria-hidden />
+                                        Medications
                                     </a>
                                 )}
 
                                 {/* DAILY CARE */}
                                 <span className="hidden lg:block text-[10px] font-bold uppercase tracking-widest text-gray-300 px-3 pt-4 pb-2">Daily Care</span>
                                 {taskCount > 0 && (
-                                    <a href="#monitoring" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
-                                        📋 Daily Tasks
+                                    <a href="#monitoring" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
+                                        <ClipboardList className={navIconCls} strokeWidth={1.75} aria-hidden />
+                                        Daily tasks
                                     </a>
                                 )}
                                 {apptCount > 0 && (
-                                    <a href="#appointments" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2">
-                                        📅 Appointments
-                                        {urgentAppts > 0 && <span className="w-1.5 h-1.5 rounded-full bg-customRed flex-shrink-0" />}
+                                    <a href="#appointments" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
+                                        <CalendarDays className={navIconCls} strokeWidth={1.75} aria-hidden />
+                                        Appointments
+                                        {urgentAppts > 0 && <span className="w-1.5 h-1.5 rounded-full bg-customRed flex-shrink-0" aria-hidden />}
                                     </a>
                                 )}
                                 {(ds?.dietInstructions || ds?.activityRestrictions) && (
-                                    <a href="#diet-activity" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
-                                        🍎 Diet & Activity
+                                    <a href="#diet-activity" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
+                                        <Apple className={navIconCls} strokeWidth={1.75} aria-hidden />
+                                        Diet &amp; activity
                                     </a>
                                 )}
                                 {(ds?.homeCareSteps?.length ?? 0) > 0 && (
-                                    <a href="#home-care" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
-                                        🏠 Home Care
+                                    <a href="#home-care" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
+                                        <Home className={navIconCls} strokeWidth={1.75} aria-hidden />
+                                        Home care
                                     </a>
                                 )}
 
                                 {/* RECORDS */}
                                 <span className="hidden lg:block text-[10px] font-bold uppercase tracking-widest text-gray-300 px-3 pt-4 pb-2">Records</span>
                                 {labCount > 0 && (
-                                    <a href="#labs" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
-                                        🧪 Labs
+                                    <a href="#labs" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
+                                        <FlaskConical className={navIconCls} strokeWidth={1.75} aria-hidden />
+                                        Labs
                                     </a>
                                 )}
                                 {imagingCount > 0 && (
-                                    <a href="#imaging" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
-                                        📷 Imaging
+                                    <a href="#imaging" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
+                                        <Camera className={navIconCls} strokeWidth={1.75} aria-hidden />
+                                        Imaging
                                     </a>
                                 )}
                                 {vaccineCount > 0 && (
-                                    <a href="#vaccines" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
-                                        💉 Vaccines
+                                    <a href="#vaccines" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
+                                        <Syringe className={navIconCls} strokeWidth={1.75} aria-hidden />
+                                        Vaccines
                                     </a>
                                 )}
                                 {questions.length > 0 && (
-                                    <a href="#questions" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
-                                        ❓ Doctor Q&apos;s
+                                    <a href="#questions" className="group px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy motion-safe:transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30 focus-visible:ring-inset">
+                                        <MessageCircleQuestion className={navIconCls} strokeWidth={1.75} aria-hidden />
+                                        Doctor questions
                                     </a>
                                 )}
 

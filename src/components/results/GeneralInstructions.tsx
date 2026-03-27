@@ -1,6 +1,10 @@
 import React from 'react';
 
-export function GeneralInstructions({ sections }: { sections: { title: string, content: string | string[], icon?: string }[] }) {
+export function GeneralInstructions({
+    sections,
+}: {
+    sections: { title: string; content: string | string[]; icon?: React.ReactNode }[];
+}) {
     const validSections = sections.filter(s => {
         if (!s.content) return false;
         if (Array.isArray(s.content) && s.content.length === 0) return false;
@@ -17,7 +21,7 @@ export function GeneralInstructions({ sections }: { sections: { title: string, c
                 {validSections.map((section, idx) => (
                     <div key={idx} className="pb-6 border-b border-gray-100 last:border-0 last:pb-0">
                         <h4 className="font-serif text-[18px] text-navy mb-3 flex items-center gap-2">
-                            {section.icon && <span>{section.icon}</span>}
+                            {section.icon && <span className="flex items-center justify-center">{section.icon}</span>}
                             {section.title}
                         </h4>
 

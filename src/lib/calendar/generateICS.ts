@@ -173,7 +173,7 @@ export function generateMedicationICS(meds: MedicationEvent[]): string {
 
             events.push(
                 buildVEVENT({
-                    summary: `💊 ${med.name}`,
+                    summary: `Med: ${med.name}`,
                     description: desc,
                     dtstart: formatDateICS(start),
                     dtend: formatDateICS(end),
@@ -215,7 +215,7 @@ function generateAppointmentICSFromDate(appt: AppointmentEvent, date: Date): str
     ].filter(Boolean).join("\\n");
 
     const event = buildVEVENT({
-        summary: `📅 ${appt.specialty}: ${appt.purpose}`,
+        summary: `Appt: ${appt.specialty}: ${appt.purpose}`,
         description: desc,
         dtstart: formatDateICS(date),
         dtend: formatDateICS(end),
@@ -291,7 +291,7 @@ export function openGoogleCalendarMeds(meds: MedicationEvent[]) {
             const timeLabel = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
 
             const url = buildGoogleCalendarURL({
-                title: `💊 ${med.name} — ${timeLabel}`,
+                title: `Med: ${med.name} — ${timeLabel}`,
                 details,
                 start,
                 end,
@@ -331,7 +331,7 @@ export function generateAllAppointmentsICS(appointments: AppointmentEvent[]): st
 
         events.push(
             buildVEVENT({
-                summary: `📅 ${appt.specialty}: ${appt.purpose}`,
+                summary: `Appt: ${appt.specialty}: ${appt.purpose}`,
                 description: desc,
                 dtstart: formatDateICS(start),
                 dtend: formatDateICS(end),
@@ -371,7 +371,7 @@ export function openGoogleCalendarAppointment(appt: AppointmentEvent) {
     ].filter(Boolean).join("\n");
 
     const url = buildGoogleCalendarURL({
-        title: `📅 ${appt.specialty}: ${appt.purpose}`,
+        title: `Appt: ${appt.specialty}: ${appt.purpose}`,
         details,
         start,
         end,

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { CalendarDays, Stethoscope, Sun } from "lucide-react";
 
 const STORAGE_KEY = "medlablingo-care-phone-notes";
 
@@ -54,19 +55,22 @@ export function CareNavigationPanel({ careNavigation }: { careNavigation: CareNa
 
     const Section = ({
         title,
-        emoji,
+        icon,
         items,
         accent,
     }: {
         title: string;
-        emoji: string;
+        icon: ReactNode;
         items: string[];
         accent: string;
     }) =>
         items.length === 0 ? null : (
             <div className="rounded-xl border border-gray-100 bg-warmBase/40 p-4">
                 <h3 className={`text-[11px] font-bold uppercase tracking-widest ${accent} mb-2 flex items-center gap-2`}>
-                    <span>{emoji}</span> {title}
+                    <span className="flex items-center justify-center text-current" aria-hidden>
+                        {icon}
+                    </span>
+                    {title}
                 </h3>
                 <ul className="space-y-2">
                     {items.map((t, i) => (
@@ -89,11 +93,21 @@ export function CareNavigationPanel({ careNavigation }: { careNavigation: CareNa
             </div>
 
             <div className="grid gap-4 md:grid-cols-1">
-                <Section title="Today" emoji="☀️" items={careNavigation.doToday ?? []} accent="text-navy" />
-                <Section title="This week" emoji="📅" items={careNavigation.doThisWeek ?? []} accent="text-teal" />
+                <Section
+                    title="Today"
+                    icon={<Sun className="w-4 h-4" strokeWidth={1.75} />}
+                    items={careNavigation.doToday ?? []}
+                    accent="text-navy"
+                />
+                <Section
+                    title="This week"
+                    icon={<CalendarDays className="w-4 h-4" strokeWidth={1.75} />}
+                    items={careNavigation.doThisWeek ?? []}
+                    accent="text-teal"
+                />
                 <Section
                     title="Before your next appointment"
-                    emoji="🩺"
+                    icon={<Stethoscope className="w-4 h-4" strokeWidth={1.75} />}
                     items={careNavigation.beforeNextAppointment ?? []}
                     accent="text-sage"
                 />

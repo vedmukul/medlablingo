@@ -1,4 +1,18 @@
 import React from 'react';
+import {
+    Apple,
+    Baby,
+    Ban,
+    Bandage,
+    CalendarDays,
+    Camera,
+    ClipboardList,
+    FlaskConical,
+    Home,
+    Pill,
+    Syringe,
+    Wind,
+} from 'lucide-react';
 import { WarningSigns } from './WarningSigns';
 import { DailyMonitoring } from './DailyMonitoring';
 import { DietCard } from './DietCard';
@@ -35,10 +49,12 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
     const immunizations = result.immunizations ?? [];
     const urgentAppts = (followUp ?? []).filter((a: any) => a.urgency === 'critical').length;
 
+    const giCls = "w-5 h-5 text-teal shrink-0";
+
     const generalSections = [
-        { title: "Home Care Steps", content: homeCareSteps, icon: "🏠" },
-        { title: "Wound & Incision Care", content: ds.woundCare, icon: "🩹" },
-        { title: "Respiratory Precautions", content: ds.respiratoryPrecautions, icon: "🫁" },
+        { title: "Home Care Steps", content: homeCareSteps, icon: <Home className={giCls} strokeWidth={1.75} aria-hidden /> },
+        { title: "Wound & Incision Care", content: ds.woundCare, icon: <Bandage className={giCls} strokeWidth={1.75} aria-hidden /> },
+        { title: "Respiratory Precautions", content: ds.respiratoryPrecautions, icon: <Wind className={giCls} strokeWidth={1.75} aria-hidden /> },
     ];
 
     return (
@@ -58,7 +74,7 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                 <CollapsibleSection
                     id="medications"
                     title="Medications"
-                    icon="💊"
+                    icon={<Pill className="w-5 h-5 text-teal shrink-0" strokeWidth={1.75} aria-hidden />}
                     count={meds.length}
                     preview={meds.slice(0, 2).map((m: any) => m.name).join(", ")}
                     accentColor="border-teal"
@@ -76,7 +92,7 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                                     }))
                                 );
                             }}
-                            className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-navy bg-sand hover:bg-sand-dark px-3 py-1.5 rounded-lg transition-colors"
+                            className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-navy bg-sand hover:bg-sand-dark px-3 py-2 min-h-[40px] rounded-lg motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/35 focus-visible:ring-offset-2"
                         >
                             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M19.5 22h-15A2.5 2.5 0 0 1 2 19.5v-15A2.5 2.5 0 0 1 4.5 2H8v2H4.5a.5.5 0 0 0-.5.5v15a.5.5 0 0 0 .5.5h15a.5.5 0 0 0 .5-.5V16h2v3.5a2.5 2.5 0 0 1-2.5 2.5zM8 7V3h8v4H8zm10-4h2v4h-2V3zM6 3h0V3zm0 8h12v2H6v-2zm0 4h8v2H6v-2z" /></svg>
                             Add to Google Calendar
@@ -97,7 +113,11 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                                 )}
                                 {m.cautionsGeneral && (
                                     <div className="flex gap-2 items-start text-amber bg-amber-light/60 p-2.5 rounded text-[12px] mt-1">
-                                        <span className="shrink-0">⚠</span>
+                                        <span className="shrink-0 inline-flex" aria-hidden>
+                                            <svg className="w-4 h-4 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                                                <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                        </span>
                                         <p className="leading-snug">{m.cautionsGeneral}</p>
                                     </div>
                                 )}
@@ -110,7 +130,7 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
             {stoppedMeds.length > 0 && (
                 <CollapsibleSection
                     title="Discontinued Medications"
-                    icon="🚫"
+                    icon={<Ban className="w-5 h-5 text-gray-500 shrink-0" strokeWidth={1.75} aria-hidden />}
                     count={stoppedMeds.length}
                     accentColor="border-gray-300"
                 >
@@ -123,7 +143,7 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                 <CollapsibleSection
                     id="appointments"
                     title="Follow-up Appointments"
-                    icon="📅"
+                    icon={<CalendarDays className="w-5 h-5 text-navy shrink-0" strokeWidth={1.75} aria-hidden />}
                     count={followUp.length}
                     urgentCount={urgentAppts}
                     preview={followUp.slice(0, 2).map((a: any) => a.specialty).join(", ")}
@@ -138,7 +158,7 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                 <CollapsibleSection
                     id="monitoring"
                     title="Daily Monitoring Checklist"
-                    icon="📋"
+                    icon={<ClipboardList className="w-5 h-5 text-sage shrink-0" strokeWidth={1.75} aria-hidden />}
                     count={monitoring.length}
                     preview="Temperature, feeding, diaper tracking..."
                     accentColor="border-sage"
@@ -152,7 +172,7 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                 <CollapsibleSection
                     id="diet-activity"
                     title="Diet & Activity"
-                    icon="🍎"
+                    icon={<Apple className="w-5 h-5 text-sage shrink-0" strokeWidth={1.75} aria-hidden />}
                     accentColor="border-sage"
                 >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -167,7 +187,7 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                 <CollapsibleSection
                     id="home-care"
                     title="Home Care Instructions"
-                    icon="🏠"
+                    icon={<Home className="w-5 h-5 text-sage shrink-0" strokeWidth={1.75} aria-hidden />}
                     count={homeCareSteps.length}
                     accentColor="border-sage"
                 >
@@ -179,7 +199,7 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
             {(ds.feedingPlan || ds.safeSleepInstructions || ds.developmentalGuidance) && (
                 <CollapsibleSection
                     title="Neonatal Guidance"
-                    icon="👶"
+                    icon={<Baby className="w-5 h-5 text-teal shrink-0" strokeWidth={1.75} aria-hidden />}
                     accentColor="border-teal"
                 >
                     <NeonatalSection
@@ -198,7 +218,7 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                 <CollapsibleSection
                     id="labs"
                     title="Lab Results"
-                    icon="🧪"
+                    icon={<FlaskConical className="w-5 h-5 text-gray-500 shrink-0" strokeWidth={1.75} aria-hidden />}
                     count={labs.length}
                     preview={labs.slice(0, 3).map((l: any) => l.name).join(", ")}
                     accentColor="border-gray-300"
@@ -216,7 +236,7 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
                 <CollapsibleSection
                     id="imaging"
                     title="Imaging & Procedures"
-                    icon="📷"
+                    icon={<Camera className="w-5 h-5 text-gray-500 shrink-0" strokeWidth={1.75} aria-hidden />}
                     count={imaging.length}
                     preview={imaging.slice(0, 2).map((im: any) => im.name || im.study).join(", ")}
                     accentColor="border-gray-300"
@@ -228,8 +248,9 @@ export function DischargeSummaryLayout({ result, t }: { result: any, t?: any }) 
             {/* Immunizations */}
             {immunizations.length > 0 && (
                 <CollapsibleSection
+                    id="vaccines"
                     title="Vaccines & Immunizations"
-                    icon="💉"
+                    icon={<Syringe className="w-5 h-5 text-gray-500 shrink-0" strokeWidth={1.75} aria-hidden />}
                     count={immunizations.length}
                     accentColor="border-gray-300"
                 >
