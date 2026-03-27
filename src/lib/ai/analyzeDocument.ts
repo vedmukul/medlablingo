@@ -5,6 +5,8 @@ import {
 import { redact } from "../safety/redact";
 import { resolveProvider, getModelInfo } from "./providers/resolve";
 import type { ModelInfo } from "./providers/resolve";
+import { PIPELINE_VERSION, PROMPT_VERSION } from "../pipeline/versioning";
+import { US_ESCALATION_DEFAULTS } from "../safety/escalationDefaults";
 
 /**
  * Input parameters for document analysis
@@ -13,6 +15,11 @@ export interface AnalyzeDocumentInput {
     text: string;
     documentType: "lab_report" | "discharge_instructions" | "discharge_summary";
     readingLevel: "simple" | "standard";
+    /** Redacted text length + truncation flag for traceability (pillar 2) */
+    extractionContext?: {
+        analyzedCharacterCount: number;
+        textWasTruncated: boolean;
+    };
 }
 
 /**
@@ -49,7 +56,7 @@ export interface AnalyzeDocumentInput {
 export async function analyzeDocument(
     input: AnalyzeDocumentInput
 ): Promise<AnalysisResult> {
-    const { text, documentType, readingLevel } = input;
+    const { text, documentType, readingLevel, extractionContext } = input;
 
     // Validate input
     if (!text || typeof text !== "string") {
@@ -123,7 +130,13 @@ export async function analyzeDocument(
         }
     }
 
-    parsedResponse = postProcessResponse(parsedResponse, modelInfo, documentType, readingLevel);
+    parsedResponse = postProcessResponse(
+        parsedResponse,
+        modelInfo,
+        documentType,
+        readingLevel,
+        extractionContext
+    );
 
     // Debug: log the shape of the processed response
     const debugShape = parsedResponse && typeof parsedResponse === "object"
@@ -195,7 +208,13 @@ export async function analyzeDocument(
         );
     }
 
-    retryParsed = postProcessResponse(retryParsed, modelInfo, documentType, readingLevel);
+    retryParsed = postProcessResponse(
+        retryParsed,
+        modelInfo,
+        documentType,
+        readingLevel,
+        extractionContext
+    );
 
     const retryValidation = validateAnalysisResult(retryParsed);
 
@@ -295,6 +314,62 @@ function findFirstArray(obj: any, exclude: Set<string> = new Set()): any[] | und
     return undefined;
 }
 
+const DEFAULT_ESCALATION = US_ESCALATION_DEFAULTS;
+
+function normalizeDocumentAnchors(raw: any): Array<{ topic: string; verbatimExcerpt: string }> | undefined {
+    const arr = findByAlias(raw, [
+        "documentAnchors", "document_anchors", "sourceQuotes", "evidenceFromDocument", "verbatimQuotes",
+    ]);
+    if (!Array.isArray(arr)) return undefined;
+    const out: Array<{ topic: string; verbatimExcerpt: string }> = [];
+    for (const item of arr) {
+        if (item && typeof item === "object") {
+            const topic =
+                coerceToString(findByAlias(item, ["topic", "label", "title", "section"])) || "Document";
+            const excerpt =
+                coerceToString(findByAlias(item, ["verbatimExcerpt", "quote", "excerpt", "text", "snippet"])).slice(
+                    0,
+                    500
+                );
+            if (excerpt.length > 0) out.push({ topic, verbatimExcerpt: excerpt });
+        } else {
+            const s = coerceToString(item).slice(0, 500);
+            if (s.length > 0) out.push({ topic: "Document", verbatimExcerpt: s });
+        }
+    }
+    return out.length ? out.slice(0, 20) : undefined;
+}
+
+function mergeEscalationGuidance(raw: any, result: any) {
+    const eg = findByAlias(raw, ["escalationGuidance", "escalation_guidance", "urgentEscalation", "emergencyGuidance"]);
+    const callSet = new Set<string>([...DEFAULT_ESCALATION.callEmergencyIf]);
+    const urgentSet = new Set<string>([...DEFAULT_ESCALATION.seekUrgentCareIf]);
+    if (eg && typeof eg === "object") {
+        coerceToStringArray(findByAlias(eg, ["callEmergencyIf", "call911If", "emergencyIf"])).forEach((s) =>
+            callSet.add(s)
+        );
+        coerceToStringArray(findByAlias(eg, ["seekUrgentCareIf", "urgentCareIf"])).forEach((s) => urgentSet.add(s));
+    }
+    const docWarnings = result?.dischargeSection?.warningSignsFromDoc;
+    if (Array.isArray(docWarnings)) {
+        for (const w of docWarnings) {
+            if (w && typeof w === "object" && typeof w.symptom === "string") {
+                callSet.add(`${w.symptom} — ${w.action || "Follow your discharge instructions or call your care team"}`);
+            }
+        }
+    }
+    const crisisNote =
+        eg && typeof eg === "object" && typeof eg.crisisNote === "string"
+            ? eg.crisisNote.slice(0, 600)
+            : DEFAULT_ESCALATION.crisisNote;
+
+    return {
+        callEmergencyIf: Array.from(callSet).slice(0, 15),
+        seekUrgentCareIf: Array.from(urgentSet).slice(0, 15),
+        crisisNote,
+    };
+}
+
 /**
  * Post-processes the LLM response to ensure schema compliance.
  *
@@ -312,7 +387,8 @@ function postProcessResponse(
     response: unknown,
     modelInfo: ModelInfo,
     knownDocumentType: "lab_report" | "discharge_instructions" | "discharge_summary",
-    knownReadingLevel: "simple" | "standard"
+    knownReadingLevel: "simple" | "standard",
+    extractionContext?: { analyzedCharacterCount: number; textWasTruncated: boolean }
 ): unknown {
     if (!response || typeof response !== "object") {
         return response;
@@ -359,6 +435,7 @@ function postProcessResponse(
     const TOP_KEYS = [
         "meta", "patientSummary", "questionsForDoctor",
         "questionsForDoctorConfidence", "whatWeCouldNotDetermine",
+        "documentAnchors", "escalationGuidance",
         "labsSection", "dischargeSection", "imagingAndProcedures", "discontinuedMedications",
     ] as const;
     const result: any = pick(raw, TOP_KEYS);
@@ -394,7 +471,7 @@ function postProcessResponse(
     }
 
     result.meta = {
-        schemaVersion: "1.0.0" as const,
+        schemaVersion: "1.2.0" as const,
         createdAt,
         documentType: knownDocumentType,
         readingLevel: knownReadingLevel,
@@ -405,6 +482,12 @@ function postProcessResponse(
             provider: modelInfo.provider,
             modelName: modelInfo.modelName,
             temperature: modelInfo.temperature,
+        },
+        traceability: {
+            pipelineVersion: PIPELINE_VERSION,
+            promptVersion: PROMPT_VERSION,
+            analyzedCharacterCount: extractionContext?.analyzedCharacterCount,
+            documentTextWasTruncated: extractionContext?.textWasTruncated ?? false,
         },
     };
 
@@ -681,6 +764,13 @@ function postProcessResponse(
         };
     }
 
+    delete result.documentAnchors;
+    const anchors = normalizeDocumentAnchors(raw);
+    if (anchors?.length) {
+        result.documentAnchors = anchors;
+    }
+    result.escalationGuidance = mergeEscalationGuidance(raw, result);
+
     return result;
 }
 
@@ -948,10 +1038,12 @@ takeaways, instructions), you must:
         "- The JSON must exactly match the required schema for " + documentType + "\n" +
         "- Include modelInfo will be added automatically (do not include it)\n\n" +
         "REQUIRED FIELDS:\n" +
-        "- meta: metadata about the analysis (schemaVersion: \"1.0.0\", createdAt, documentType, readingLevel, language, provenance, safety)\n" +
+        "- meta: metadata (schemaVersion: \"1.2.0\", createdAt, documentType, readingLevel, language, provenance, safety). Do NOT include modelInfo or traceability — the server adds them.\n" +
         "- patientSummary: overall summary and key takeaways (3-7 items)\n" +
         "- questionsForDoctor: 5-10 questions the patient should ask their doctor\n" +
-        "- whatWeCouldNotDetermine: things we couldn't interpret from the document\n" +
+        "- whatWeCouldNotDetermine: things we could NOT confidently read or infer — be specific (e.g. \"Dose of metoprolol unclear in scanned table\")\n" +
+        "- documentAnchors: OPTIONAL array of { topic, verbatimExcerpt } — up to 12 SHORT verbatim phrases copied from the document (max ~400 chars each) that support your summary or key labs/warnings. Only real text from the document; no invention.\n" +
+        "- escalationGuidance: OPTIONAL object { callEmergencyIf: string[], seekUrgentCareIf?: string[], crisisNote?: string } — add document-specific emergency triggers from the record; use clear, non-alarmist language.\n" +
         optLabText + "\n" +
         "Remember: Educational only, not medical advice. Always include safety disclaimers.";
 }
@@ -996,7 +1088,8 @@ If any checkbox fails, go back and fix it before responding.`;
         "4. Focus strictly on explaining and simplifying the text. Do not provide medical advice.\n" +
         "5. DO NOT refuse to explain the document. DO NOT add disclaimers telling the user to consult their doctor for an explanation; provide the explanation yourself.\n" +
         "6. Add confidence scores (0.0-1.0) where you have reasonable certainty based on document clarity and explicitness\n" +
-        "7. If unsure about a confidence value, omit it rather than guessing";
+        "7. Include documentAnchors (verbatim quotes) and escalationGuidance when the document supports them — improves trust and safety.\n" +
+        "8. If unsure about a confidence value, omit it rather than guessing";
 }
 
 /**
@@ -1031,8 +1124,14 @@ function getMockAnalysisResult(
     documentType: "lab_report" | "discharge_instructions" | "discharge_summary",
     readingLevel: "simple" | "standard"
 ): AnalysisResult {
+    const mockEscalation = {
+        callEmergencyIf: [...DEFAULT_ESCALATION.callEmergencyIf],
+        seekUrgentCareIf: [...DEFAULT_ESCALATION.seekUrgentCareIf],
+        crisisNote: DEFAULT_ESCALATION.crisisNote,
+    };
+
     const baseMeta = {
-        schemaVersion: "1.0.0" as const,
+        schemaVersion: "1.2.0" as const,
         createdAt: new Date().toISOString(),
         documentType,
         readingLevel,
@@ -1050,6 +1149,17 @@ function getMockAnalysisResult(
             ],
             emergencyNote:
                 "If you have urgent symptoms, call 911 or go to the emergency room immediately.",
+        },
+        modelInfo: {
+            provider: "mock" as const,
+            modelName: "mock-mode",
+            temperature: 0,
+        },
+        traceability: {
+            pipelineVersion: PIPELINE_VERSION,
+            promptVersion: PROMPT_VERSION,
+            analyzedCharacterCount: 0,
+            documentTextWasTruncated: false,
         },
     };
 
@@ -1075,6 +1185,10 @@ function getMockAnalysisResult(
             whatWeCouldNotDetermine: [
                 "Real analysis pending API key configuration",
             ],
+            documentAnchors: [
+                { topic: "Example lab line", verbatimExcerpt: "Sodium 135 mEq/L (reference 135-145)" },
+            ],
+            escalationGuidance: mockEscalation,
             labsSection: {
                 overallLabNote:
                     "Mock lab analysis - configure API key for real results",
@@ -1140,6 +1254,10 @@ function getMockAnalysisResult(
             whatWeCouldNotDetermine: [
                 "Real analysis pending API key configuration",
             ],
+            documentAnchors: [
+                { topic: "Discharge", verbatimExcerpt: "Mock discharge excerpt for demonstration only." },
+            ],
+            escalationGuidance: mockEscalation,
             labsSection: {
                 overallLabNote: "Mock lab analysis",
                 labs: [
@@ -1234,6 +1352,10 @@ function getMockAnalysisResult(
             whatWeCouldNotDetermine: [
                 "Real analysis pending API key configuration",
             ],
+            documentAnchors: [
+                { topic: "Instructions", verbatimExcerpt: "Mock home care instruction" },
+            ],
+            escalationGuidance: mockEscalation,
             labsSection: undefined,
             dischargeSection: {
                 status: "draft" as const,

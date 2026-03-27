@@ -55,6 +55,15 @@ const MetaSchema = z
                 temperature: z.number(),
             })
             .optional(),
+        /** Pipeline / prompt provenance for audits and regression tracking (v1.2.0+) */
+        traceability: z
+            .object({
+                pipelineVersion: z.string(),
+                promptVersion: z.string(),
+                analyzedCharacterCount: z.number().int().nonnegative().optional(),
+                documentTextWasTruncated: z.boolean().optional(),
+            })
+            .optional(),
     })
     .strict();
 
@@ -200,12 +209,31 @@ const FollowUpAppointmentSchema = z.object({
 /**
  * Base schema shared by all document types
  */
+const DocumentAnchorSchema = z
+    .object({
+        topic: z.string(),
+        verbatimExcerpt: z.string().max(500),
+    })
+    .strict();
+
+const EscalationGuidanceSchema = z
+    .object({
+        callEmergencyIf: z.array(z.string()).min(1).max(15),
+        seekUrgentCareIf: z.array(z.string()).max(15).optional(),
+        crisisNote: z.string().max(600).optional(),
+    })
+    .strict();
+
 const BaseAnalysisSchema = z.object({
     meta: MetaSchema,
     patientSummary: PatientSummarySchema,
     questionsForDoctor: z.array(z.string()).min(5).max(10),
     questionsForDoctorConfidence: z.array(ConfidenceScoreSchema).optional(),
     whatWeCouldNotDetermine: z.array(z.string()),
+    /** Short verbatim quotes from the document supporting key explanations (v1.2.0+) */
+    documentAnchors: z.array(DocumentAnchorSchema).max(20).optional(),
+    /** When to call emergency services vs urgent care — merged with sensible defaults server-side */
+    escalationGuidance: EscalationGuidanceSchema.optional(),
 });
 
 /**

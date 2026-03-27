@@ -1,8 +1,21 @@
 import React from 'react';
-import { openGoogleCalendarAppointment } from '@/lib/calendar/generateICS';
+import { openGoogleCalendarAppointment, downloadAllAppointmentsICS, type AppointmentEvent } from '@/lib/calendar/generateICS';
 
 export function FollowUpAppointments({ appointments }: { appointments: any[] }) {
     if (!appointments || appointments.length === 0) return null;
+
+    const toEvents = (): AppointmentEvent[] =>
+        appointments.map((appt) => ({
+            specialty: appt.specialty ?? "Follow-up",
+            provider: appt.provider,
+            dateTime: appt.dateTime ?? new Date().toISOString(),
+            purpose: appt.purpose ?? "Medical follow-up",
+            urgency: appt.urgency,
+        }));
+
+    const handleDownloadAllICS = () => {
+        downloadAllAppointmentsICS(toEvents());
+    };
 
     const handleAddToCalendar = (appt: any) => {
         openGoogleCalendarAppointment({
@@ -16,7 +29,18 @@ export function FollowUpAppointments({ appointments }: { appointments: any[] }) 
 
     return (
         <div className="space-y-4">
-            <h3 className="text-[12px] font-bold uppercase tracking-widest text-gray-400 ml-1">Follow-up Appointments</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ml-1">
+                <h3 className="text-[12px] font-bold uppercase tracking-widest text-gray-400">Follow-up Appointments</h3>
+                {appointments.length > 1 && (
+                    <button
+                        type="button"
+                        onClick={handleDownloadAllICS}
+                        className="self-start sm:self-auto text-[12px] font-semibold text-navy bg-sand hover:bg-sand/80 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                        Download all (.ics)
+                    </button>
+                )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {appointments.map((appt, idx) => {
                     const isCritical = appt.urgency === "critical";

@@ -8,6 +8,7 @@ import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { AnalysisChat } from "@/components/AnalysisChat";
 import { TranslateButton } from "@/components/TranslateButton";
 import { DischargeSummaryLayout } from "@/components/results/DischargeSummaryLayout";
+import { TrustSafetyIntegrationsPanel } from "@/components/results/TrustSafetyIntegrationsPanel";
 import { LabsTable } from "@/components/LabsTable";
 import { clearAnalysis, loadAnalysis, loadHistory } from "@/lib/persistence/analysisStorage";
 import { isDischargeSummary } from "@/contracts/analysisSchema";
@@ -114,7 +115,7 @@ function ResultsContent() {
         );
     }
 
-    const { documentType, readingLevel, extractionPreview, result } = data as any;
+    const { documentType, readingLevel, extractionPreview, result, extractedTextLength } = data as any;
 
     const t = translated;
     const summary = t?.overallSummary ?? result?.patientSummary?.overallSummary;
@@ -210,6 +211,9 @@ function ResultsContent() {
                                 <span className="hidden lg:block text-[10px] font-bold uppercase tracking-widest text-gray-300 px-3 pt-1 pb-2">Essentials</span>
                                 <a href="#summary" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
                                     Summary
+                                </a>
+                                <a href="#trust-safety" className="px-3 py-2 rounded-lg hover:bg-gray-50 hover:text-navy transition-colors whitespace-nowrap lg:whitespace-normal">
+                                    Safety &amp; handoff
                                 </a>
                                 {warningCount > 0 && (
                                     <a href="#warning-signs" className="px-3 py-2 rounded-lg hover:bg-amber-light/40 hover:text-amber transition-colors whitespace-nowrap lg:whitespace-normal flex items-center gap-2">
@@ -321,6 +325,12 @@ function ResultsContent() {
                                         ))}
                                     </ul>
                                 )}
+                            </section>
+                        )}
+
+                        {result && (
+                            <section id="trust-safety" className="scroll-mt-24">
+                                <TrustSafetyIntegrationsPanel result={result} extractedTextLength={extractedTextLength} />
                             </section>
                         )}
 

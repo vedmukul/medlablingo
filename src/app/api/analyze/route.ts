@@ -224,6 +224,10 @@ export async function POST(request: Request) {
                 text: extractedText, // analyzeDocument() redacts internally; we also truncated already.
                 documentType: dt,
                 readingLevel: rl,
+                extractionContext: {
+                    analyzedCharacterCount: extractedText.length,
+                    textWasTruncated: isTruncated,
+                },
             })
         );
 
